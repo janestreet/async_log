@@ -11,7 +11,7 @@ open! Import
 let try_with_log_exn =
   let max_unflushed_errors = 10 in
   let current_unflushed_errors = ref 0 in
-  let log sexp = Log.Global.sexp sexp ~level:`Error in
+  let log sexp = Global.sexp sexp ~level:`Error in
   fun exn ->
     if !current_unflushed_errors < max_unflushed_errors
     then (
@@ -27,8 +27,8 @@ let try_with_log_exn =
           [%message
             "Stopped logging exceptions raised to [Monitor.try_with] that already \
              returned until error log can be flushed."];
-      upon (Log.Global.flushed ()) (fun () -> decr current_unflushed_errors))
+      upon (Global.flushed ()) (fun () -> decr current_unflushed_errors))
 ;;
 
 let () = Async_kernel.Monitor.Expert.try_with_log_exn := try_with_log_exn
-let () = Async_unix.Tcp.Private.set_max_connection_limit_logger Log.Global.error_s
+let () = Async_unix.Tcp.Private.set_max_connection_limit_logger Global.error_s
