@@ -5,14 +5,6 @@ open! Import
 module type S = Global_intf.S
 
 module Make () : S = struct
-  let send_errors_to_top_level_monitor e =
-    let e =
-      try Error.raise e with
-      | e -> e
-    in
-    Monitor.send_exn Monitor.main ~backtrace:`Get e
-  ;;
-
   let log =
     lazy
       (Log.create
@@ -21,7 +13,7 @@ module Make () : S = struct
          ()
          ~level:`Info
          ~output:[ Output_unix.stderr () ]
-         ~on_error:(`Call send_errors_to_top_level_monitor))
+         ~on_error:On_error.send_to_top_level_monitor)
   ;;
 
   let level () = Log.level (Lazy.force log)
