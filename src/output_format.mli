@@ -6,13 +6,13 @@ type machine_readable =
   | `Sexp_hum
   | `Bin_prot
   ]
-[@@deriving bin_io, sexp]
+[@@deriving bin_io, enumerate, sexp]
 
 type t =
   [ machine_readable
   | `Text
   ]
-[@@deriving bin_io, sexp]
+[@@deriving bin_io, enumerate, sexp]
 
 module Stable : sig
   module V1 : sig
