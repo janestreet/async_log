@@ -17,7 +17,10 @@ module Output = struct
   module Format = Output_format
 end
 
-module Ppx_syntax = Ppx_syntax
+module Ppx_log_syntax = struct
+  module Ppx_log_syntax = Ppx_log_syntax
+end
+
 module Reader = Message_reader
 
 module Rotation = struct

@@ -95,7 +95,13 @@ module Output : sig
   module Format = Output_format
 end
 
-module Ppx_syntax = Ppx_syntax
+module Ppx_log_syntax : sig
+  (** [Async_log.Ppx_log_syntax.Ppx_log_syntax] exists so that people can [open
+      Async_log.Ppx_log_syntax] to use ppx log, instead of doing a module alias. This is
+      consistent with [Monad.Syntax.Let_syntax]. *)
+  module Ppx_log_syntax : module type of Ppx_log_syntax
+end
+
 module Reader = Message_reader
 
 module Rotation : sig
