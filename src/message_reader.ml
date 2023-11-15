@@ -6,7 +6,7 @@ let read_from_reader format r ~pipe_w =
   match format with
   | `Sexp | `Sexp_hum ->
     let sexp_pipe = Reader.read_sexps r in
-    let%map () = Pipe.transfer sexp_pipe pipe_w ~f:Message.Stable.Versioned.t_of_sexp in
+    let%map () = Pipe.transfer sexp_pipe pipe_w ~f:Message.Stable.V2.t_of_sexp in
     Pipe.close pipe_w
   | `Bin_prot ->
     let rec loop () =
@@ -34,7 +34,7 @@ module Expert = struct
     match format with
     | `Sexp | `Sexp_hum ->
       let%map sexp = Reader.read_sexp reader in
-      Reader.Read_result.map sexp ~f:Message.Stable.Versioned.t_of_sexp
+      Reader.Read_result.map sexp ~f:Message.Stable.V2.t_of_sexp
     | `Bin_prot -> Reader.read_bin_prot reader Message.Stable.V2.bin_reader_t
   ;;
 end

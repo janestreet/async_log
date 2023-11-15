@@ -29,19 +29,11 @@ val to_write_only_text : ?zone:Time.Zone.t -> t -> string
 val is_from_upstream_log : t -> bool
 
 module Stable : sig
-  module Versioned : sig
-    type nonrec t = t [@@deriving of_sexp]
-  end
-
-  module Version : sig
-    type t [@@deriving of_sexp]
-  end
-
-  module V0 : sig
-    type nonrec t = t [@@deriving bin_io, sexp]
-  end
-
   module V2 : sig
     type nonrec t = t [@@deriving bin_io, sexp]
+
+    module For_testing : sig
+      val sexp_of_t_as_v0 : t -> Sexp.t
+    end
   end
 end

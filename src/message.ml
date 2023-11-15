@@ -1,33 +1,15 @@
-(* Log messages are stored, starting with V2, as an explicit version followed by the
-   message itself.  This makes it easier to move the message format forward while
-   still allowing older logs to be read by the new code.
+(** Log messages are stored, starting with V2, as an explicit version followed by the
+    message itself. This makes it easier to move the message format forward while still
+    allowing older logs to be read by the new code.
 
-   If you make a new version you must add a version to the Version module below and
-   should follow the Make_versioned_serializable pattern.
+    If you make a new version you must add a version to the Version module below and
+    should follow the Make_versioned_serializable pattern.
 *)
 module Stable = struct
   open Core.Core_stable
   open Import_stable
 
-  module Version = struct
-    type t = V2 [@@deriving bin_io, sexp, compare]
-
-    let%expect_test "bin_digest Message.Version.V2" =
-      print_endline [%bin_digest: t];
-      [%expect {| 6ae8dff060dc8c96585060b4f76d2974 |}]
-    ;;
-
-    let ( <> ) t1 t2 = compare t1 t2 <> 0
-    let to_string t = Core.Sexp.to_string (sexp_of_t t)
-  end
-
-  module type Versioned_serializable = sig
-    type t [@@deriving bin_io, sexp]
-
-    val version : Version.t
-  end
-
-  module Stable_message_common = struct
+  module T1 = struct
     module Serialized = struct
       type 'a t =
         { time : Time.V1.t
@@ -61,115 +43,49 @@ module Stable = struct
        the use of [V1] here. *)
     include Binable.Of_binable1.V1 [@alert "-legacy"] (Serialized) (T)
     include T
+
+    let map_message t ~f = { t with message = f t.message }
   end
 
-  module Make_versioned_serializable (T : Versioned_serializable) : sig
-    type t [@@deriving bin_io, sexp]
-  end
-  with type t = T.t = struct
-    type t = T.t
-    type versioned_serializable = Version.t * T.t [@@deriving bin_io, sexp]
-
-    let t_of_versioned_serializable (version, t) =
-      if Version.( <> ) version T.version
-      then
-        Core.failwithf
-          !"version mismatch %{Version} <> to expected version %{Version}"
-          version
-          T.version
-          ()
-      else t
-    ;;
-
-    let sexp_of_t t = sexp_of_versioned_serializable (T.version, t)
-
-    let t_of_sexp sexp =
-      let versioned_t = versioned_serializable_of_sexp sexp in
-      t_of_versioned_serializable versioned_t
-    ;;
-
-    include
-      Binable.Of_binable.V1 [@alert "-legacy"]
-        (struct
-          type t = versioned_serializable [@@deriving bin_io]
-        end)
-        (struct
-          type t = T.t
-
-          let to_binable t = T.version, t
-          let of_binable versioned_t = t_of_versioned_serializable versioned_t
-        end)
-  end
-
-  module V2 = Make_versioned_serializable (struct
-    type t = Sexp_or_string.Stable.V1.t Stable_message_common.t [@@deriving bin_io, sexp]
-
-    let%expect_test "bin_digest Message.V2" =
-      print_endline [%bin_digest: t];
-      [%expect {| 1dd2225c5392b6ac36b718ee2b1a08db |}]
-    ;;
-
-    let version = Version.V2
-  end)
-
-  (* this is the serialization scheme in 111.18 and before *)
+  (* this is the serialization scheme in 111.18 (2014) and before *)
   module V0 = struct
-    type v0_t = string Stable_message_common.t [@@deriving bin_io, sexp]
+    type t = string T1.t [@@deriving bin_shape, sexp]
 
-    let%expect_test "bin_digest Message.V1.v0_t" =
-      print_endline [%bin_digest: v0_t];
+    let%expect_test "bin_digest Message.V1.t" =
+      print_endline [%bin_digest: t];
       [%expect {| d790de8237524f270360ccf1e56f7030 |}]
     ;;
-
-    let v0_to_v2 (v0_t : v0_t) : V2.t =
-      { time = v0_t.time
-      ; level = v0_t.level
-      ; message = `String v0_t.message
-      ; tags = v0_t.tags
-      ; is_from_upstream_log = v0_t.is_from_upstream_log
-      }
-    ;;
-
-    let v2_to_v0 (v2_t : V2.t) : v0_t =
-      { time = v2_t.time
-      ; level = v2_t.level
-      ; message = Sexp_or_string.Stable.V1.to_string v2_t.message
-      ; tags = v2_t.tags
-      ; is_from_upstream_log = v2_t.is_from_upstream_log
-      }
-    ;;
-
-    include
-      Binable.Of_binable.V1 [@alert "-legacy"]
-        (struct
-          type t = v0_t [@@deriving bin_io]
-        end)
-        (struct
-          let to_binable = v2_to_v0
-          let of_binable = v0_to_v2
-
-          type t = Sexp_or_string.Stable.V1.t Stable_message_common.t
-        end)
-
-    let sexp_of_t t = sexp_of_v0_t (v2_to_v0 t)
-    let t_of_sexp sexp = v0_to_v2 (v0_t_of_sexp sexp)
-
-    type t = V2.t
   end
 
-  module Versioned = struct
-    type t = V2.t
+  module V2 = struct
+    include Versioned.Stable.Make (struct
+      type t = Sexp_or_string.Stable.V1.t T1.t [@@deriving bin_io, sexp]
+
+      let%expect_test "bin_digest Message.V2" =
+        print_endline [%bin_digest: t];
+        [%expect {| 1dd2225c5392b6ac36b718ee2b1a08db |}]
+      ;;
+
+      let version = Versioned.Stable.Version.V2
+    end)
+
+    let of_v0 = T1.map_message ~f:(fun m -> `String m)
+    let to_v0 = T1.map_message ~f:Sexp_or_string.Stable.V1.to_string
 
     (* this allows for automagical reading of any versioned sexp, so long as we can always
        lift to a Message.t *)
     let t_of_sexp (sexp : Core.Sexp.t) =
       match sexp with
-      | List (List (Atom "time" :: _) :: _) -> V0.t_of_sexp sexp
+      | List (List (Atom "time" :: _) :: _) -> V0.t_of_sexp sexp |> of_v0
       | List [ (Atom _ as version); _ ] ->
-        (match Version.t_of_sexp version with
-         | V2 -> V2.t_of_sexp sexp)
+        (match Versioned.Stable.Version.t_of_sexp version with
+         | V2 -> t_of_sexp sexp)
       | _ -> Core.failwithf !"Log.Message.t_of_sexp: malformed sexp: %{Core.Sexp}" sexp ()
     ;;
+
+    module For_testing = struct
+      let sexp_of_t_as_v0 t = [%sexp (to_v0 t : V0.t)]
+    end
   end
 end
 

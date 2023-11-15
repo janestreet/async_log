@@ -31,11 +31,6 @@ module Message : sig
   val add_tags : t -> (string * string) list -> t
 
   module Stable : sig
-    module V0 : sig
-      (** [V0.bin_t] is the [Message.bin_t] in jane-111.18 and before *)
-      type nonrec t = t [@@deriving bin_io, sexp]
-    end
-
     module V2 : sig
       type nonrec t = t [@@deriving bin_io, sexp]
     end
