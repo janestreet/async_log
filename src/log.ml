@@ -7,32 +7,55 @@ include Raw_log
    The core logging functionality, independent of format, etc., is in [Raw_log]. *)
 
 let sexp_of_t (_ : t) = Sexp.Atom "<opaque>"
-let message t msg = if would_log t (Message.level msg) then push_message t msg
 
-let create_message t ?level ?time ?tags msg =
-  let time_source = get_time_source t in
-  Message.create ?level ?time ~time_source ?tags msg
+let message t msg =
+  if would_log t (Message.level msg)
+  then push_message_event t (Message_event.of_serialized_message msg)
 ;;
 
-let push_sexp ?level ?time ?tags t sexp =
-  push_message t (create_message t ?level ?time ?tags (`Sexp sexp))
+let push_message_event t data source ~level ~time ~legacy_tags =
+  let time =
+    Option.value_or_thunk time ~default:(fun () ->
+      Synchronous_time_source.now (get_time_source t)
+      |> Time_ns.to_time_float_round_nearest)
+  in
+  let legacy_tags = Option.value legacy_tags ~default:[] in
+  Message_event.Private.create
+    data
+    source
+    ~level
+    ~time
+    ~legacy_tags
+    ~is_from_upstream_log:false
+  |> push_message_event t
+;;
+
+let push_message t msg ~level ~time ~tags =
+  push_message_event
+    t
+    msg
+    (Manually_constructed "from async log")
+    ~level
+    ~time
+    ~legacy_tags:tags
 ;;
 
 let sexp ?level ?time ?tags t sexp =
-  if would_log t level then push_sexp ?level ?time ?tags t sexp
+  if would_log t level then push_message t (`Sexp sexp) ~level ~time ~tags
 ;;
 
 let string ?level ?time ?tags t s =
+  if would_log t level then push_message t (`String s) ~level ~time ~tags
+;;
+
+let structured_message ?level ?time ?tags t data source =
   if would_log t level
-  then push_message t (create_message t ?level ?time ?tags (`String s))
+  then push_message_event t (`Structured data) source ~level ~time ~legacy_tags:tags
 ;;
 
 let printf ?level ?time ?tags t fmt =
   if would_log t level
-  then
-    ksprintf
-      (fun msg -> push_message t (create_message t ?level ?time ?tags (`String msg)))
-      fmt
+  then ksprintf (fun msg -> push_message t (`String msg) ~level ~time ~tags) fmt
   else ifprintf () fmt
 ;;
 
@@ -151,8 +174,15 @@ module For_testing = struct
 end
 
 module Private = struct
-  let push_upstream_log_sexp t sexp ~level ~time ~tags =
-    push_message t (Message.create_from_upstream_log (`Sexp sexp) ~level ~time ~tags)
+  let push_upstream_log_sexp t sexp ~level ~time ~tags:legacy_tags =
+    Message_event.Private.create
+      (`Sexp sexp)
+      (Manually_constructed "from upstream log")
+      ~level:(Some level)
+      ~time
+      ~legacy_tags
+      ~is_from_upstream_log:true
+    |> Raw_log.push_message_event t
   ;;
 
   let set_level_via_param_lazy = set_level_via_param_lazy

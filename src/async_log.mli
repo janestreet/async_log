@@ -39,6 +39,9 @@ module Message : sig
   module Private : module type of Message
 end
 
+module Message_event = Message_event
+module Message_sexp = Message_sexp
+
 module Output : sig
   type t = Output.t
 
@@ -73,6 +76,13 @@ module Output : sig
     -> ?close:(unit -> unit Deferred.t)
     -> flush:(unit -> unit Deferred.t)
     -> (Message.t Queue.t -> unit Deferred.t)
+    -> t
+
+  val create_expert
+    :  ?rotate:(unit -> unit Deferred.t)
+    -> ?close:(unit -> unit Deferred.t)
+    -> flush:(unit -> unit Deferred.t)
+    -> (Message_event.t Queue.t -> unit Deferred.t)
     -> t
 
   (** [filter_to_level] wraps an output and gives you a new output which only

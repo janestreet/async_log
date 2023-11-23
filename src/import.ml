@@ -21,6 +21,13 @@ module Synchronous_time_source = struct
 end
 
 include struct
+  open Ppx_log_types
+  module Log_tag = Log_tag
+  module Message_sexp = Message_sexp
+  module Message_source = Message_source
+end
+
+include struct
   open Async_unix
   module Reader = Reader
   module Shutdown = Shutdown

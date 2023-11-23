@@ -73,6 +73,14 @@ module type S = sig
     -> string
     -> unit
 
+  val structured_message
+    :  ?level:Level.t
+    -> ?time:Time.t
+    -> ?tags:(string * string) list
+    -> Message_sexp.t
+    -> Message_source.t
+    -> unit
+
   val message : Message.t -> unit
 
   val surround_s

@@ -20,7 +20,7 @@ open! Import
 *)
 module Update = struct
   type t =
-    | Msg of Message.t
+    | Msg of Message_event.Unstable.t
     | New_output of Output.t
     | Flush of unit Ivar.t
     | Rotate of unit Ivar.t
@@ -242,14 +242,16 @@ let would_log t msg_level =
   && Level.as_or_more_verbose_than ~log_level:(level t) ~msg_level
 ;;
 
-let push_message t msg =
+let push_message_event t msg =
   (* We want to call [transform], even if we don't end up pushing the message to an
      output.  This allows for someone to listen to all messages that would theoretically
      be logged by this log (respecting level), and then maybe log them somewhere else. *)
   let msg =
     match t.transform with
     | None -> msg
-    | Some f -> f msg
+    | Some f ->
+      f (Message_event.to_serialized_message_lossy msg)
+      |> Message_event.of_serialized_message
   in
   if not t.output_is_disabled then push_update t (Msg msg)
 ;;

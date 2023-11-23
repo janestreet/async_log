@@ -28,4 +28,4 @@ val is_closed : t -> bool
 val flushed : t -> unit Deferred.t
 val rotate : t -> unit Deferred.t
 val would_log : t -> Level.t option -> bool
-val push_message : t -> Message.t -> unit
+val push_message_event : t -> Message_event.t -> unit

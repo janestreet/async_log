@@ -11,13 +11,6 @@ val create
   -> Sexp_or_string.t
   -> t
 
-val create_from_upstream_log
-  :  Sexp_or_string.t
-  -> level:Level.t
-  -> time:Time_float.t
-  -> tags:(string * string) list
-  -> t
-
 val time : t -> Time.t
 val level : t -> Level.t option
 val set_level : t -> Level.t option -> t
@@ -26,7 +19,6 @@ val raw_message : t -> [ `String of string | `Sexp of Sexp.t ]
 val tags : t -> (string * string) list
 val add_tags : t -> (string * string) list -> t
 val to_write_only_text : ?zone:Time.Zone.t -> t -> string
-val is_from_upstream_log : t -> bool
 
 module Stable : sig
   module V2 : sig

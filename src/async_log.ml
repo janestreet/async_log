@@ -11,6 +11,9 @@ module Message = struct
   module Private = Message
 end
 
+module Message_event = Message_event
+module Message_sexp = Ppx_log_types.Message_sexp
+
 module Output = struct
   include Output
   include Output_unix

@@ -149,6 +149,15 @@ val string
   -> string
   -> unit
 
+val structured_message
+  :  ?level:Level.t
+  -> ?time:Time.t
+  -> ?tags:(string * string) list
+  -> t
+  -> Message_sexp.t
+  -> Message_source.t
+  -> unit
+
 (** Log a pre-created message. *)
 val message : t -> Message.t -> unit
 

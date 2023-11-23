@@ -51,6 +51,10 @@ module Make () : S = struct
   let string ?level ?time ?tags s = Log.string ?level ?time ?tags (Lazy.force log) s
   let message msg = Log.message (Lazy.force log) msg
 
+  let structured_message ?level ?time ?tags =
+    Log.structured_message ?level ?time ?tags (Lazy.force log)
+  ;;
+
   let surround_s ~on_subsequent_errors ?level ?time ?tags msg f =
     Log.surround_s ~on_subsequent_errors ?level ?time ?tags (Lazy.force log) msg f
   ;;

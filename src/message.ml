@@ -10,39 +10,13 @@ module Stable = struct
   open Import_stable
 
   module T1 = struct
-    module Serialized = struct
-      type 'a t =
-        { time : Time.V1.t
-        ; level : Level.Stable.V1.t option
-        ; message : 'a
-        ; tags : (string * string) list
-        }
-      [@@deriving bin_io]
-    end
-
-    module T = struct
-      type 'a t =
-        { time : Time.V1.t
-        ; level : Level.Stable.V1.t option
-        ; message : 'a
-        ; tags : (string * string) list
-        ; is_from_upstream_log : bool
-             [@sexp_drop_if Core.Fn.const true] [@sexp.default false]
-        }
-      [@@deriving
-        sexp
-        , stable_record
-            ~version:[%stable: 'a Serialized.t]
-            ~remove:[ is_from_upstream_log ]]
-
-      let to_binable = to_Serialized_t
-      let of_binable = of_Serialized_t ~is_from_upstream_log:false
-    end
-
-    (* We don't want to change the bin digest with the binable operation above, hence
-       the use of [V1] here. *)
-    include Binable.Of_binable1.V1 [@alert "-legacy"] (Serialized) (T)
-    include T
+    type 'a t =
+      { time : Time.V1.t
+      ; level : Level.Stable.V1.t option
+      ; message : 'a
+      ; tags : (string * string) list
+      }
+    [@@deriving bin_io, sexp]
 
     let map_message t ~f = { t with message = f t.message }
   end
@@ -93,15 +67,7 @@ open! Core
 open! Import
 include Stable.V2
 
-let create_raw ?level ~time ?(tags = []) message : t =
-  { time; level; message; tags; is_from_upstream_log = false }
-;;
-
-let create_from_upstream_log message ~level ~time ~tags : t =
-  { time; level = Some level; message; tags; is_from_upstream_log = true }
-;;
-
-let is_from_upstream_log (t : t) = t.is_from_upstream_log
+let create_raw ?level ~time ?(tags = []) message : t = { time; level; message; tags }
 
 let create ?level ?time ?time_source ?tags message =
   let time =

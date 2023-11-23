@@ -13,7 +13,7 @@ end = struct
 end
 
 type t =
-  { write : Message.t Queue.t -> unit Deferred.t
+  { write : Message_event.t Queue.t -> unit Deferred.t
   ; rotate : unit -> unit Deferred.t
   ; close : unit -> unit Deferred.t
   ; flush : unit -> unit Deferred.t
@@ -24,7 +24,12 @@ type t =
     heap_block : Definitely_a_heap_block.t
   }
 
-let create ?(rotate = fun () -> return ()) ?(close = fun () -> return ()) ~flush write =
+let create_expert
+  ?(rotate = fun () -> return ())
+  ?(close = fun () -> return ())
+  ~flush
+  write
+  =
   let t =
     { write; rotate; close; flush; heap_block = Definitely_a_heap_block.the_one_and_only }
   in
@@ -34,6 +39,11 @@ let create ?(rotate = fun () -> return ()) ?(close = fun () -> return ()) ~flush
       (let%bind () = t.flush () in
        t.close ()));
   t
+;;
+
+let create ?rotate ?close ~flush write =
+  create_expert ?rotate ?close ~flush (fun messages ->
+    Queue.map messages ~f:Message_event.to_serialized_message_lossy |> write)
 ;;
 
 let write t msgs = t.write msgs
@@ -68,11 +78,13 @@ let filter_to_level t ~level =
   let write messages =
     let filtered_messages =
       Queue.filter messages ~f:(fun message ->
-        Level.as_or_more_verbose_than ~log_level:level ~msg_level:(Message.level message))
+        Level.as_or_more_verbose_than
+          ~log_level:level
+          ~msg_level:(Message_event.level message))
     in
     t.write filtered_messages
   in
-  create ~rotate:t.rotate ~close:t.close ~flush:t.flush write
+  create_expert ~rotate:t.rotate ~close:t.close ~flush:t.flush write
 ;;
 
 module For_testing = struct
