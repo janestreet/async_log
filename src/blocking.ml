@@ -1,4 +1,5 @@
 open! Core
+open! Async_kernel
 open! Import
 
 (* This module is intended to be blocking, so we explicitly don't open [Async] at the top.
@@ -15,7 +16,14 @@ end
 
 let level : Level.t ref = ref `Info
 let write = ref Output.stderr
-let time_source = ref Synchronous_time_source.default
+
+let time_source =
+  ref
+    (if Ppx_inline_test_lib.am_running
+     then Synchronous_time_source.(read_only (create ~now:Time_ns.epoch ()))
+     else Synchronous_time_source.wall_clock ())
+;;
+
 let transform = ref None
 let set_level l = level := l
 let level () = !level
@@ -41,8 +49,13 @@ let would_log msg_level =
 ;;
 
 let create_message ?level ?time ?tags msg =
-  let time_source = !time_source in
-  Message.create ?level ?time ~time_source ?tags msg
+  let time =
+    match time with
+    | None ->
+      Synchronous_time_source.now !time_source |> Time_ns.to_time_float_round_nearest
+    | Some time -> time
+  in
+  Message.create ?level ?tags msg ~time
 ;;
 
 let gen ?level:msg_level ?time ?tags k =

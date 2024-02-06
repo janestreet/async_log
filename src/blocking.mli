@@ -1,4 +1,5 @@
 open! Core
+open! Async_kernel
 open! Import
 
 (** Async programs often have a non-Async portion that runs before the scheduler begins
@@ -28,44 +29,44 @@ val set_time_source : Synchronous_time_source.t -> unit
 val set_transform : (Message.t -> Message.t) option -> unit
 
 val raw
-  :  ?time:Time.t
+  :  ?time:Time_float.t
   -> ?tags:(string * string) list
   -> ('a, unit, string, unit) format4
   -> 'a
 
 val info
-  :  ?time:Time.t
+  :  ?time:Time_float.t
   -> ?tags:(string * string) list
   -> ('a, unit, string, unit) format4
   -> 'a
 
 val error
-  :  ?time:Time.t
+  :  ?time:Time_float.t
   -> ?tags:(string * string) list
   -> ('a, unit, string, unit) format4
   -> 'a
 
 val debug
-  :  ?time:Time.t
+  :  ?time:Time_float.t
   -> ?tags:(string * string) list
   -> ('a, unit, string, unit) format4
   -> 'a
 
 val printf
   :  ?level:Level.t
-  -> ?time:Time.t
+  -> ?time:Time_float.t
   -> ?tags:(string * string) list
   -> ('a, unit, string, unit) format4
   -> 'a
 
-val raw_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
-val info_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
-val error_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
-val debug_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
+val raw_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
+val info_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
+val error_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
+val debug_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
 
 val sexp
   :  ?level:Level.t
-  -> ?time:Time.t
+  -> ?time:Time_float.t
   -> ?tags:(string * string) list
   -> Sexp.t
   -> unit

@@ -1,2 +1,6 @@
-(library (name async_log) (public_name async_log)
- (libraries async_unix core_unix.uuid) (preprocess (pps ppx_jane)))
+(library
+ (name async_log)
+ (public_name async_log)
+ (libraries async_unix async_log_kernel core_kernel.univ)
+ (preprocess
+  (pps ppx_jane)))

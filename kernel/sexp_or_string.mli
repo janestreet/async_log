@@ -5,6 +5,7 @@ type t =
   [ `Sexp of Sexp.t
   | `String of string
   ]
+[@@deriving sexp_of]
 
 module Stable : sig
   module V1 : sig

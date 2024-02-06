@@ -12,8 +12,8 @@ module type S = sig
   val set_on_error : [ `Raise | `Call of Error.t -> unit ] -> unit
   val get_time_source : unit -> Synchronous_time_source.t
   val set_time_source : Synchronous_time_source.t -> unit
-  val get_transform : unit -> (Message.t -> Message.t) option
-  val set_transform : (Message.t -> Message.t) option -> unit
+  val get_transform : unit -> (Message_event.t -> Message_event.t) option
+  val set_transform : (Message_event.t -> Message_event.t) option -> unit
   val would_log : Level.t option -> bool
   val set_level_via_param : unit -> unit Command.Param.t
 
@@ -21,25 +21,25 @@ module type S = sig
       global to the module. *)
 
   val raw
-    :  ?time:Time.t
+    :  ?time:Time_float.t
     -> ?tags:(string * string) list
     -> ('a, unit, string, unit) format4
     -> 'a
 
   val info
-    :  ?time:Time.t
+    :  ?time:Time_float.t
     -> ?tags:(string * string) list
     -> ('a, unit, string, unit) format4
     -> 'a
 
   val error
-    :  ?time:Time.t
+    :  ?time:Time_float.t
     -> ?tags:(string * string) list
     -> ('a, unit, string, unit) format4
     -> 'a
 
   val debug
-    :  ?time:Time.t
+    :  ?time:Time_float.t
     -> ?tags:(string * string) list
     -> ('a, unit, string, unit) format4
     -> 'a
@@ -49,44 +49,45 @@ module type S = sig
 
   val printf
     :  ?level:Level.t
-    -> ?time:Time.t
+    -> ?time:Time_float.t
     -> ?tags:(string * string) list
     -> ('a, unit, string, unit) format4
     -> 'a
 
-  val raw_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
-  val info_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
-  val error_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
-  val debug_s : ?time:Time.t -> ?tags:(string * string) list -> Sexp.t -> unit
+  val raw_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
+  val info_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
+  val error_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
+  val debug_s : ?time:Time_float.t -> ?tags:(string * string) list -> Sexp.t -> unit
 
   val sexp
     :  ?level:Level.t
-    -> ?time:Time.t
+    -> ?time:Time_float.t
     -> ?tags:(string * string) list
     -> Sexp.t
     -> unit
 
   val string
     :  ?level:Level.t
-    -> ?time:Time.t
+    -> ?time:Time_float.t
     -> ?tags:(string * string) list
     -> string
     -> unit
 
   val structured_message
     :  ?level:Level.t
-    -> ?time:Time.t
+    -> ?time:Time_float.t
     -> ?tags:(string * string) list
-    -> Message_sexp.t
+    -> Message_data.t
     -> Message_source.t
     -> unit
 
   val message : Message.t -> unit
+  val message_event : Message_event.t -> unit
 
   val surround_s
     :  on_subsequent_errors:[ `Call of exn -> unit | `Log | `Raise ]
     -> ?level:Level.t
-    -> ?time:Time.t
+    -> ?time:Time_float.t
     -> ?tags:(string * string) list
     -> Sexp.t
     -> (unit -> 'a Deferred.t)
@@ -95,7 +96,7 @@ module type S = sig
   val surroundf
     :  on_subsequent_errors:[ `Call of exn -> unit | `Log | `Raise ]
     -> ?level:Level.t
-    -> ?time:Time.t
+    -> ?time:Time_float.t
     -> ?tags:(string * string) list
     -> ('a, unit, string, (unit -> 'b Deferred.t) -> 'b Deferred.t) format4
     -> 'a
@@ -115,12 +116,7 @@ end
 module type Global = sig
   module type S = S
 
-  (** This functor can be called to generate "singleton" logging modules. *)
-  module Make () : S
-
-  (** Programs that want simplistic single-channel logging can open this module.  It
-      provides a global logging facility to a single output type at a single level.  More
-      nuanced logging can be had by using the functions that operate on a distinct [Log.t]
-      type. *)
-  include S
+  (** This function can be called to generate logging modules with the [Log.t] lazily
+      instantiated, and prepopulated in the arguments. *)
+  val make : Output.t lazy_t -> (module S)
 end

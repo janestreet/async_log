@@ -3,7 +3,7 @@ open! Import
 
 module type S = sig
   type version
-  type t [@@deriving bin_io, sexp]
+  type 'a t [@@deriving bin_io, sexp]
 
   val version : version
 end
@@ -18,10 +18,10 @@ module type Versioned = sig
     end
 
     module Make (T : S with type version := Version.t) : sig
-      type t = T.t
+      type 'a t = 'a T.t
 
-      include Binable.S with type t := T.t
-      include Sexpable.S with type t := T.t
+      include Binable.S1 with type 'a t := 'a T.t
+      include Sexpable.S1 with type 'a t := 'a T.t
     end
   end
 end

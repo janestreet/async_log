@@ -15,7 +15,7 @@ module Stable = struct
 
   module Make (T : Versioned_intf.S with type version := Version.t) = struct
     module Versioned = struct
-      type t = Version.t * T.t [@@deriving bin_io, sexp]
+      type 'a t = Version.t * 'a T.t [@@deriving bin_io, sexp]
     end
 
     let of_versioned (version, t) =
@@ -29,23 +29,23 @@ module Stable = struct
       else t
     ;;
 
-    type t = T.t
+    type 'time t = 'time T.t
 
     include
-      Sexpable.Of_sexpable.V1
+      Sexpable.Of_sexpable1.V1
         (Versioned)
         (struct
-          type nonrec t = T.t
+          type nonrec 'time t = 'time T.t
 
           let to_sexpable t = T.version, t
           let of_sexpable = of_versioned
         end)
 
     include
-      Binable.Of_binable.V1 [@alert "-legacy"]
+      Binable.Of_binable1.V1 [@alert "-legacy"]
         (Versioned)
         (struct
-          type t = T.t
+          type 'time t = 'time T.t
 
           let to_binable t = T.version, t
           let of_binable = of_versioned

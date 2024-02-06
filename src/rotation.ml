@@ -24,10 +24,10 @@ module Stable = struct
     type t =
       { messages : int option [@sexp.option]
       ; size : Byte_units.V1.t option [@sexp.option]
-      ; time : Time.Ofday.V1.t option [@sexp.option]
-      ; keep : [ `All | `Newer_than of Time.Span.V3.t | `At_least of int ]
+      ; time : Time_float.Ofday.V1.t option [@sexp.option]
+      ; keep : [ `All | `Newer_than of Time_float.Span.V3.t | `At_least of int ]
       ; naming_scheme : Naming_scheme.V1.t
-      ; zone : Time.Zone.V1.t
+      ; zone : Time_float_unix.Zone.V1.t
       }
     [@@deriving fields ~getters ~iterators:fold, sexp_of]
   end
@@ -49,18 +49,20 @@ let create ?messages ?size ?time ?zone ~keep ~naming_scheme () =
   { messages
   ; size
   ; time
-  ; zone = Option.value zone ~default:(force Time.Zone.local)
+  ; zone = Option.value zone ~default:(force Time_float_unix.Zone.local)
   ; keep
   ; naming_scheme
   }
 ;;
 
 let first_occurrence_after time ~ofday ~zone =
-  let first_at_or_after time = Time.occurrence `First_after_or_at time ~ofday ~zone in
+  let first_at_or_after time =
+    Time_float.occurrence `First_after_or_at time ~ofday ~zone
+  in
   let candidate = first_at_or_after time in
   (* we take care not to return the same time we were given *)
-  if Time.equal time candidate
-  then first_at_or_after (Time.add time Time.Span.robust_comparison_tolerance)
+  if Time_float.equal time candidate
+  then first_at_or_after (Time_float.add time Time_float.Span.robust_comparison_tolerance)
   else candidate
 ;;
 
@@ -82,16 +84,16 @@ let should_rotate t ~last_messages ~last_size ~last_time ~current_time =
         let rotation_time =
           first_occurrence_after last_time ~ofday:rotation_ofday ~zone:t.zone
         in
-        acc || Time.( >= ) current_time rotation_time)
+        acc || Time_float.( >= ) current_time rotation_time)
     ~zone:(fun acc _ -> acc)
     ~keep:(fun acc _ -> acc)
     ~naming_scheme:(fun acc _ -> acc)
 ;;
 
-let default ?(zone = force Time.Zone.local) () =
+let default ?(zone = force Time_float_unix.Zone.local) () =
   { messages = None
   ; size = None
-  ; time = Some Time.Ofday.start_of_day
+  ; time = Some Time_float.Ofday.start_of_day
   ; keep = `All
   ; naming_scheme = `Dated
   ; zone

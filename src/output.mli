@@ -1,29 +1,42 @@
 open! Core
 open! Async_kernel
 open! Import
+include module type of Async_log_kernel.Output
 
-type t [@@deriving sexp_of]
+(** [stdout] defaults to [format=`Text] *)
+val stdout : ?format:Format.t -> unit -> t
 
-val create
-  :  ?rotate:(unit -> unit Deferred.t)
-  -> ?close:(unit -> unit Deferred.t)
-  -> flush:(unit -> unit Deferred.t)
-  -> (Message.t Queue.t -> unit Deferred.t)
+(** [stderr] defaults to [format=`Text] *)
+val stderr : ?format:Format.t -> unit -> t
+
+(** The writer output type takes no responsibility over the Writer.t it is given. In
+    particular it makes no attempt to ever close it. *)
+val writer : Format.t -> Writer.t -> t
+
+(** The [perm] argument is passed through to [Writer.open_file], and so has the default
+    behavior described there. *)
+val file : ?perm:Unix.file_perm -> Format.t -> filename:string -> t
+
+val rotating_file
+  :  ?perm:Unix.file_perm
+  -> ?time_source:Synchronous_time_source.t
+  -> ?log_on_rotation:(unit -> Message.t list)
+  -> Format.t
+  -> basename:string
+  -> ?suffix:string (** defaults to [".log"] *)
+  -> Rotation.t
   -> t
 
-val create_expert
-  :  ?rotate:(unit -> unit Deferred.t)
-  -> ?close:(unit -> unit Deferred.t)
-  -> flush:(unit -> unit Deferred.t)
-  -> (Message_event.t Queue.t -> unit Deferred.t)
-  -> t
+(** Returns a tail of the filenames. When [rotate] is called, the previous filename is
+    put on the tail *)
+val rotating_file_with_tail
+  :  ?perm:Unix.file_perm
+  -> ?time_source:Synchronous_time_source.t
+  -> ?log_on_rotation:(unit -> Message.t list)
+  -> Format.t
+  -> basename:string
+  -> ?suffix:string (** defaults to [".log"] *)
+  -> Rotation.t
+  -> t * string Tail.t
 
-val write : t -> Message_event.t Queue.t -> unit Deferred.t
-val rotate : t -> unit Deferred.t
-val flush : t -> unit Deferred.t
-val filter_to_level : t -> level:Level.t -> t
-val combine : t list -> t
-
-module For_testing : sig
-  val create : map_output:(string -> string) -> t
-end
+(** See {!Log_extended} for syslog and colorized console output. *)
