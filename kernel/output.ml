@@ -79,16 +79,39 @@ let filter_to_level t ~level =
   { t with write }
 ;;
 
+let stderr_sync =
+  lazy
+    (let zone =
+       (* Set all the tests to run in the NYC time zone to keep this deterministic in
+          tests, and preserve compatibility with [Time_ns_unix].
+
+       *)
+       if am_running_test then Timezone.find_exn "nyc" else force Timezone.local
+     in
+     create_unbuffered ~flush:return (fun msg ->
+       Message.to_write_only_text (Message_event.to_serialized_message_lossy msg) zone
+       |> Core.prerr_endline))
+;;
+
+let stderr_async = Set_once.create ()
+
+let stderr =
+  lazy
+    (match Set_once.get stderr_async with
+     | None -> force stderr_sync
+     | Some stderr -> force stderr)
+;;
+
 module Private = struct
   let buffered_background_error t = t.buffered_background_error
+  let set_async_stderr_output t ~here = Set_once.set_exn stderr_async here t
 end
 
 module For_testing = struct
   let create ~map_output =
-    let each_print_endline_automatically_flushes () = Deferred.unit in
-    create ~flush:each_print_endline_automatically_flushes (fun queue ->
-      Queue.iter queue ~f:(fun message ->
-        map_output (Message.message message) |> print_endline);
-      Deferred.unit)
+    create_unbuffered ~flush:return (fun msg ->
+      map_output (Message_event.message msg) |> print_endline)
   ;;
+
+  let is_async_stderr_output_set () = Set_once.is_some stderr_async
 end

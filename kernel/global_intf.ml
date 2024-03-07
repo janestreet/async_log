@@ -118,5 +118,9 @@ module type Global = sig
 
   (** This function can be called to generate logging modules with the [Log.t] lazily
       instantiated, and prepopulated in the arguments. *)
-  val make : Output.t lazy_t -> (module S)
+  module Make () : S
+
+  (** This module provides functions like [Global.sexp] which logs without needing to
+      provide a [Log.t]. At this point, it's recommended to use [ppx_log] instead. *)
+  include S
 end

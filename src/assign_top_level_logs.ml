@@ -32,3 +32,9 @@ let try_with_log_exn =
 
 let () = Async_kernel.Monitor.Expert.try_with_log_exn := try_with_log_exn
 let () = Async_unix.Tcp.Private.set_max_connection_limit_logger Global.error_s
+
+let () =
+  Async_log_kernel.Output.Private.set_async_stderr_output
+    (lazy (Output.stderr ()))
+    ~here:[%here]
+;;

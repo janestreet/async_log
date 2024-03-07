@@ -67,6 +67,21 @@ module Output : sig
   val empty : t
 
   module Format = Output_format
+
+  module Private : sig
+    val set_async_stderr_output : t lazy_t -> here:Source_code_position.t -> unit
+  end
+
+  module For_testing : sig
+    val is_async_stderr_output_set : unit -> bool
+  end
+end
+
+module Ppx_log_syntax : sig
+  (** [Async_log.Ppx_log_syntax.Ppx_log_syntax] exists so that people can [open
+      Async_log.Ppx_log_syntax] to use ppx log, instead of doing a module alias. This is
+      consistent with [Monad.Syntax.Let_syntax]. *)
+  module Ppx_log_syntax : module type of Ppx_log_syntax
 end
 
 module For_testing : sig
