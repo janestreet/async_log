@@ -62,7 +62,6 @@ module State = struct
 
   let is_empty t = List.is_empty t.outputs
   let write t msg = List.iter t.outputs ~f:(fun output -> Output.write output msg)
-  let rotate t = Eager_deferred.List.iter t.outputs ~how:`Sequential ~f:Output.rotate
 end
 
 type t =
@@ -86,11 +85,6 @@ let is_empty t = State.is_empty t.state
 let write t =
   t.last_update <- `Not_a_flush;
   State.write t.state
-;;
-
-let rotate t =
-  t.last_update <- `Not_a_flush;
-  State.rotate t.state
 ;;
 
 let flushed t =

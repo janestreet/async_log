@@ -45,7 +45,6 @@ module Make () = struct
   ;;
 
   let flushed () = Log.flushed (Lazy.force log)
-  let rotate () = Log.rotate (Lazy.force log)
   let printf ?level ?time ?tags k = Log.printf ?level ?time ?tags (Lazy.force log) k
   let sexp ?level ?time ?tags s = Log.sexp ?level ?time ?tags (Lazy.force log) s
   let string ?level ?time ?tags s = Log.string ?level ?time ?tags (Lazy.force log) s

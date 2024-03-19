@@ -45,7 +45,6 @@ module type S = sig
     -> 'a
 
   val flushed : unit -> unit Deferred.t
-  val rotate : unit -> unit Deferred.t
 
   val printf
     :  ?level:Level.t

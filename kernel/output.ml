@@ -60,6 +60,8 @@ let create ?rotate ?finalize ~flush write =
     Queue.map messages ~f:Message_event.to_serialized_message_lossy |> write)
 ;;
 
+let create_expert = create_expert ?rotate:None
+
 let empty =
   create_expert (fun (_ : Message_event.t Queue.t) -> Deferred.unit) ~flush:return
 ;;

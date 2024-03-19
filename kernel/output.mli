@@ -12,8 +12,7 @@ val create
   -> t
 
 val create_expert
-  :  ?rotate:(unit -> unit Deferred.t)
-  -> ?finalize:(unit -> unit Deferred.t)
+  :  ?finalize:(unit -> unit Deferred.t)
   -> flush:(unit -> unit Deferred.t)
   -> (Message_event.t Queue.t -> unit Deferred.t)
   -> t

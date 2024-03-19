@@ -17,11 +17,6 @@ let assert_open t tag =
   if t.is_closed then failwithf "Log: can't %s because this log has been closed" tag ()
 ;;
 
-let rotate t =
-  assert_open t "rotate";
-  Mutable_outputs.rotate t.output
-;;
-
 let flushed t =
   assert_open t "flush";
   Mutable_outputs.flushed t.output

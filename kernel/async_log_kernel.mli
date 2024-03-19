@@ -24,10 +24,6 @@ module Output : sig
       that is important.  Only one batch of messages will be "in flight" at any time based
       on this deferred.
 
-      An optional [rotate] function may be given which will be called when [Log.rotate t]
-      is called while this output is in effect.  This is useful for programs that want
-      very precise control over rotation.
-
       [finalize] will be called when the output is finalized (meaning, no more open logs
       use the output, and references to the output are gone). *)
   val create
@@ -38,8 +34,7 @@ module Output : sig
     -> t
 
   val create_expert
-    :  ?rotate:(unit -> unit Deferred.t)
-    -> ?finalize:(unit -> unit Deferred.t)
+    :  ?finalize:(unit -> unit Deferred.t)
     -> flush:(unit -> unit Deferred.t)
     -> (Message_event.t Queue.t -> unit Deferred.t)
     -> t
@@ -65,6 +60,9 @@ module Output : sig
   val filter_to_level : t -> level:Level.t -> t
 
   val empty : t
+
+  val rotate : t -> unit Deferred.t
+    [@@alert deprecated "Do not introduce new uses of this function."]
 
   module Format = Output_format
 

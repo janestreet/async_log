@@ -63,9 +63,6 @@ val is_closed : t -> bool
     the call to [flushed] is out the door. *)
 val flushed : t -> unit Deferred.t
 
-(** Informs the current [Output]s to rotate if possible. *)
-val rotate : t -> unit Deferred.t
-
 (** Creates a new log.  See [set_level], [set_on_error], [set_output],
     [set_time_source], and [set_transform] for more. *)
 val create
