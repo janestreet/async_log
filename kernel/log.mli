@@ -80,6 +80,16 @@ val create_null : unit -> t
 (** Creates a copy of a log, which has the same settings and logs to the same outputs. *)
 val copy : t -> t
 
+module Event : sig
+  type t = Set_level of Level.t [@@deriving globalize, sexp_of]
+end
+
+(** A bus that may be subscribed to to get events which happen to this [t]. If you
+    subscribe to this bus and your callback raises, the error will be ignored. It is
+    recommended that you subscribe with [Bus.Subscribe] so that you may pass
+    [~on_callback_raise] there. *)
+val events : t -> (Event.t -> unit) Bus.Read_only.t
+
 (** Printf-like logging for messages at each log level or raw (no level) messages. Raw
     messages still include a timestamp. *)
 

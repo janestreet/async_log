@@ -11,7 +11,7 @@ type t =
   | `Info (** default level *)
   | `Error
   ]
-[@@deriving bin_io, compare, enumerate, sexp, sexp_grammar]
+[@@deriving bin_io, compare, enumerate, equal, globalize, sexp, sexp_grammar]
 
 include Stringable with type t := t
 

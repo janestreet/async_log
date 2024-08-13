@@ -4,6 +4,10 @@ open! Import
 
 type t
 
+module Event : sig
+  type t = Set_level of Level.t [@@deriving globalize, sexp_of]
+end
+
 val create
   :  level:Level.t
   -> output:Output.t list
@@ -29,3 +33,4 @@ val flushed : t -> unit Deferred.t
 val would_log : t -> Level.t option -> bool
 val push_message_event : t -> Message_event.t -> unit
 val all_live_logs_flushed : unit -> unit Deferred.t
+val events : t -> (Event.t -> unit) Bus.Read_only.t

@@ -1,6 +1,7 @@
 (library
  (name async_log)
  (public_name async_log)
- (libraries async_unix async_log_kernel core_kernel.univ)
+ (libraries async_unix async_kernel async_log_kernel core
+   core_unix.time_float_unix core_kernel.univ)
  (preprocess
   (pps ppx_jane)))

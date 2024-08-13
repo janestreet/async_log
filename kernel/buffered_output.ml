@@ -92,9 +92,9 @@ let create ~flush ~rotate ~write =
 
 let push_update t (update : Update.t) =
   t.last_update
-    <- (match update with
-        | Flush i -> `Flush (Ivar.read i)
-        | Msg _ | Rotate _ -> `Not_a_flush);
+  <- (match update with
+      | Flush i -> `Flush (Ivar.read i)
+      | Msg _ | Rotate _ -> `Not_a_flush);
   Pipe.write_without_pushback t.updates update
 ;;
 

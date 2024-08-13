@@ -59,10 +59,21 @@ module Output : sig
       efficient. *)
   val filter_to_level : t -> level:Level.t -> t
 
+  (** [transform_message] wraps an output and gives you a new output which
+      transforms messages before writing.
+
+      This functionality is intended for when you have multiple outputs being displayed
+      in different places and they need to have different messages.
+
+      If you have one output (or multiple outputs all using the same messages),
+      it is better to set the [Log.t]'s transform directly with [set_transform], which is
+      equivalent and more efficient. *)
+  val transform_message : t -> f:(Message_event.t -> Message_event.t) -> t
+
   val empty : t
 
   val rotate : t -> unit Deferred.t
-    [@@alert deprecated "Do not introduce new uses of this function."]
+  [@@alert deprecated "Do not introduce new uses of this function."]
 
   module Format = Output_format
 

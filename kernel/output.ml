@@ -81,12 +81,17 @@ let filter_to_level t ~level =
   { t with write }
 ;;
 
+let transform_message t ~f =
+  let write message = f message |> t.write in
+  { t with write }
+;;
+
 let stderr_sync =
   lazy
     (let zone =
        (* Set all the tests to run in the NYC time zone to keep this deterministic in
           tests, and preserve compatibility with [Time_ns_unix].
-
+         
        *)
        if am_running_test then Timezone.find_exn "nyc" else force Timezone.local
      in

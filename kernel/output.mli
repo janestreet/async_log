@@ -28,6 +28,7 @@ val write : t -> Message_event.t -> unit
 val rotate : t -> unit Deferred.t
 val flush : t -> unit Deferred.t
 val filter_to_level : t -> level:Level.t -> t
+val transform_message : t -> f:(Message_event.t -> Message_event.t) -> t
 
 (** Provides a simple stderr output. This is equivalent to [Async_log.Output.stderr],
     which uses [Async_unix.Writer.stderr], unless [Async_log] is not linked in; in this

@@ -99,10 +99,10 @@ let flushed t =
 let update_outputs t outputs =
   t.last_update <- `Not_a_flush;
   t.state
-    <- State.create
-         outputs
-         ~previous:(Some t.state)
-         ~on_background_output_error:t.on_background_output_error
+  <- State.create
+       outputs
+       ~previous:(Some t.state)
+       ~on_background_output_error:t.on_background_output_error
 ;;
 
 let current_outputs t = t.state.outputs

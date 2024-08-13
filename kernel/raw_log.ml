@@ -3,6 +3,10 @@ open! Async_kernel
 open! Import
 module Id = Unique_id.Int ()
 
+module Event = struct
+  type t = Set_level of Level.t [@@deriving globalize, sexp_of]
+end
+
 type t =
   { id : Id.t
   ; on_error : On_error.t ref
@@ -11,7 +15,10 @@ type t =
   ; output : Mutable_outputs.t
   ; mutable time_source : Synchronous_time_source.t
   ; mutable transform : (Message_event.t -> Message_event.t) option
+  ; events : (Event.t -> unit) Bus.Read_write.t
   }
+
+let events t = Bus.read_only t.events
 
 let assert_open t tag =
   if t.is_closed then failwithf "Log: can't %s because this log has been closed" tag ()
@@ -29,6 +36,7 @@ let flush_and_close t =
   then (
     let finished = flushed t in
     t.is_closed <- true;
+    upon finished (fun () -> Bus.close t.events);
     finished)
   else return ()
 ;;
@@ -64,7 +72,16 @@ let create ~level ~output ~on_error ~time_source ~transform =
       On_error.handle_error !on_error exn)
   in
   let id = Id.create () in
-  let t = { id; on_error; level; output; time_source; transform; is_closed = false } in
+  let events =
+    Bus.create_exn
+      [%here]
+      Arity1_local
+      ~on_subscription_after_first_write:Allow
+      ~on_callback_raise:(ignore : Error.t -> unit)
+  in
+  let t =
+    { id; on_error; level; output; time_source; transform; is_closed = false; events }
+  in
   Live_entry_registry.register (force live_logs) t;
   t
 ;;
@@ -78,7 +95,16 @@ let get_output t = Mutable_outputs.current_outputs t.output
 let get_on_error t = !(t.on_error)
 let set_on_error t handler = t.on_error := handler
 let level t = t.level
-let set_level t level = t.level <- level
+
+let set_level t level =
+  match Level.equal level t.level with
+  | true -> ()
+  | false ->
+    t.level <- level;
+    let event = Event.Set_level level in
+    Bus.write_local t.events event [@nontail]
+;;
+
 let get_time_source t = t.time_source
 let set_time_source t time_source = t.time_source <- time_source
 let get_transform t = t.transform

@@ -20,7 +20,7 @@ module T = struct
     | `Info
     | `Error
     ]
-  [@@deriving bin_io, compare, enumerate, sexp, sexp_grammar]
+  [@@deriving bin_io, compare, enumerate, equal, globalize, sexp, sexp_grammar]
 
   let to_string = function
     | `Debug -> "Debug"

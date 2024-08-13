@@ -17,7 +17,7 @@ open! Import
 include (
   Async_log_kernel.Message :
     module type of Async_log_kernel.Message
-      with module Stable := Async_log_kernel.Message.Stable)
+    with module Stable := Async_log_kernel.Message.Stable)
 
 type t = Time_float_unix.t Async_log_kernel.Message.T1.t [@@deriving sexp_of]
 
