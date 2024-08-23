@@ -33,4 +33,4 @@ val flushed : t -> unit Deferred.t
 val would_log : t -> Level.t option -> bool
 val push_message_event : t -> Message_event.t -> unit
 val all_live_logs_flushed : unit -> unit Deferred.t
-val events : t -> (Event.t -> unit) Bus.Read_only.t
+val events : t -> (local_ Event.t -> unit) Bus.Read_only.t

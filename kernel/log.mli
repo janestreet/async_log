@@ -88,7 +88,7 @@ end
     subscribe to this bus and your callback raises, the error will be ignored. It is
     recommended that you subscribe with [Bus.Subscribe] so that you may pass
     [~on_callback_raise] there. *)
-val events : t -> (Event.t -> unit) Bus.Read_only.t
+val events : t -> (local_ Event.t -> unit) Bus.Read_only.t
 
 (** Printf-like logging for messages at each log level or raw (no level) messages. Raw
     messages still include a timestamp. *)

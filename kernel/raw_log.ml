@@ -15,7 +15,7 @@ type t =
   ; output : Mutable_outputs.t
   ; mutable time_source : Synchronous_time_source.t
   ; mutable transform : (Message_event.t -> Message_event.t) option
-  ; events : (Event.t -> unit) Bus.Read_write.t
+  ; events : (local_ Event.t -> unit) Bus.Read_write.t
   }
 
 let events t = Bus.read_only t.events
@@ -101,7 +101,7 @@ let set_level t level =
   | true -> ()
   | false ->
     t.level <- level;
-    let event = Event.Set_level level in
+    let local_ event = Event.Set_level level in
     Bus.write_local t.events event [@nontail]
 ;;
 

@@ -63,7 +63,7 @@ let write_immediately w format msgs =
 ;;
 
 let write' w format msgs =
-  let%map w = w in
+  let%map w in
   write_immediately w format msgs
 ;;
 
@@ -263,7 +263,7 @@ end = struct
       in
       let log_files = Tail.create () in
       let t_deferred =
-        let%map absolute_basename = absolute_basename in
+        let%map absolute_basename in
         let dirname = Filename.dirname absolute_basename in
         let basename = Filename.basename absolute_basename in
         let filename =
