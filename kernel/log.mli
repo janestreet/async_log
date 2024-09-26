@@ -41,10 +41,15 @@ val set_time_source : t -> Synchronous_time_source.t -> unit
     The transform function *will not* be called if the initial message is of a level that
     would not currently be logged.
 
-    The transform function *will* be called if even if there are no log outputs. *)
-val get_transform : t -> (Message_event.t -> Message_event.t) option
+    The transform function *will* be called if even if there are no log outputs.
 
+    The transform is applied after filtering the message by level, so if a message with
+    with a level of [Info] is logged to a log with a [Info] threshold, it will be
+    logged even if the transform turns the level to [Debug].
+*)
 val set_transform : t -> (Message_event.t -> Message_event.t) option -> unit
+
+val get_transform : t -> (Message_event.t -> Message_event.t) option
 
 (** If [`Raise] is given, then background errors raised by logging will be raised to the
     monitor that was in scope when [create] was called.  Errors can be redirected anywhere
