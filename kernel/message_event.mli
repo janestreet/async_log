@@ -42,6 +42,7 @@ val stringify_message_and_map : t -> f:(string -> string) -> t
 val downgrade_to_unstructured_and_map : t -> f:(Sexp_or_string.t -> Sexp_or_string.t) -> t
 
 val set_level : t -> level:Level.t option -> t
+val map_time : t -> f:(Time_float.t -> Time_float.t) -> t
 val to_serialized_message_lossy : t -> Message.t
 val of_serialized_message : Message.t -> t
 
