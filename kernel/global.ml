@@ -23,8 +23,22 @@ module Make () = struct
   let set_on_error handler = Log.set_on_error (Lazy.force log) handler
   let get_time_source () = Log.get_time_source (Lazy.force log)
   let set_time_source time_source = Log.set_time_source (Lazy.force log) time_source
-  let get_transform () = Log.get_transform (Lazy.force log)
-  let set_transform transform = Log.set_transform (Lazy.force log) transform
+
+  module Transform = struct
+    type t = Log.Transform.t
+
+    let append' transform = Log.Transform.append' (Lazy.force log) transform
+    let append transform = Log.Transform.append (Lazy.force log) transform
+    let prepend' transform = Log.Transform.prepend' (Lazy.force log) transform
+    let prepend transform = Log.Transform.prepend (Lazy.force log) transform
+    let remove_exn t = Log.Transform.remove_exn (Lazy.force log) t
+  end
+
+  let add_tags ~tags = Log.add_tags (Lazy.force log) ~tags
+  let has_transform () = Log.has_transform (Lazy.force log)
+  let clear_transforms () = Log.clear_transforms (Lazy.force log)
+  let get_transform () = Log.get_transform (Lazy.force log) [@alert "-deprecated"]
+  let set_transform f = Log.set_transform (Lazy.force log) f [@alert "-deprecated"]
   let would_log level = Log.would_log (Lazy.force log) level
   let raw ?time ?tags k = Log.raw ?time ?tags (Lazy.force log) k
   let info ?time ?tags k = Log.info ?time ?tags (Lazy.force log) k

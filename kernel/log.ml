@@ -163,8 +163,10 @@ module For_testing = struct
 
   let create ~map_output level =
     let output = [ create_output ~map_output ] in
-    create ~output ~level ~on_error:`Raise ~time_source:None ~transform:None
+    create ~output ~level ~on_error:`Raise ~time_source:None ~transforms:[]
   ;;
+
+  let transform = For_testing.transform
 end
 
 module Private = struct
@@ -175,8 +177,27 @@ module Private = struct
 end
 
 let create ~level ~output ~on_error ?time_source ?transform () =
-  create ~level ~output ~on_error ~time_source ~transform
+  let transforms =
+    match transform with
+    | None -> []
+    | Some transform -> [ (fun msg -> Some (transform msg)) ]
+  in
+  create ~level ~output ~on_error ~time_source ~transforms
 ;;
+
+module Transform = struct
+  include Transform
+
+  let append' t f = Transform.add t f `After
+  let prepend' t f = Transform.add t f `Before
+  let append t f = ignore (Transform.add t (fun msg -> Some (f msg)) `After : Transform.t)
+
+  let prepend t f =
+    ignore (Transform.add t (fun msg -> Some (f msg)) `Before : Transform.t)
+  ;;
+end
+
+let add_tags t ~tags = Transform.prepend t (Message_event.add_tags ~tags)
 
 let create_null () =
   create ~level:`Error ~output:[] ~on_error:(`Call (fun (_ : Error.t) -> ())) ()

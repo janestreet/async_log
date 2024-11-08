@@ -53,6 +53,7 @@ let stringify_message_and_map t ~f = { t with raw_message = `String (f (message 
 let add_tags t ~tags = { t with legacy_tags = List.rev_append tags t.legacy_tags }
 let map_legacy_tags t ~f = { t with legacy_tags = List.map t.legacy_tags ~f }
 let legacy_tags t = t.legacy_tags
+let map_time t ~f = { t with time = f t.time }
 
 let to_serialized_message_lossy
   { raw_message
