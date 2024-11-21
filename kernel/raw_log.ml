@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 module Id = Unique_id.Int ()
 
-module Event = struct
+module Control_event = struct
   type t = Set_level of Level.t [@@deriving globalize, sexp_of]
 end
 
@@ -14,11 +14,11 @@ type t =
   ; mutable level : Level.t
   ; output : Mutable_outputs.t
   ; mutable time_source : Synchronous_time_source.t
-  ; mutable transform : (Message_event.t -> Message_event.t) option
-  ; events : (Event.t -> unit) Bus.Read_write.t
+  ; transforms : (Message_event.t -> Message_event.t option) Doubly_linked.t
+  ; control_events : (Control_event.t -> unit) Bus.Read_write.t
   }
 
-let events t = Bus.read_only t.events
+let control_events t = Bus.read_only t.control_events
 
 let assert_open t tag =
   if t.is_closed then failwithf "Log: can't %s because this log has been closed" tag ()
@@ -36,7 +36,7 @@ let flush_and_close t =
   then (
     let finished = flushed t in
     t.is_closed <- true;
-    upon finished (fun () -> Bus.close t.events);
+    upon finished (fun () -> Bus.close t.control_events);
     finished)
   else return ()
 ;;
@@ -57,7 +57,7 @@ let live_logs =
        end))
 ;;
 
-let create ~level ~output ~on_error ~time_source ~transform =
+let create ~level ~output ~on_error ~time_source ~transforms =
   let time_source =
     match time_source with
     | Some time_source -> time_source
@@ -72,15 +72,24 @@ let create ~level ~output ~on_error ~time_source ~transform =
       On_error.handle_error !on_error exn)
   in
   let id = Id.create () in
-  let events =
+  let control_events =
     Bus.create_exn
       [%here]
       Arity1_local
       ~on_subscription_after_first_write:Allow
       ~on_callback_raise:(ignore : Error.t -> unit)
   in
+  let transforms = Doubly_linked.of_list transforms in
   let t =
-    { id; on_error; level; output; time_source; transform; is_closed = false; events }
+    { id
+    ; on_error
+    ; level
+    ; output
+    ; time_source
+    ; transforms
+    ; is_closed = false
+    ; control_events
+    }
   in
   Live_entry_registry.register (force live_logs) t;
   t
@@ -101,14 +110,70 @@ let set_level t level =
   | true -> ()
   | false ->
     t.level <- level;
-    let event = Event.Set_level level in
-    Bus.write_local t.events event [@nontail]
+    let control_event = Control_event.Set_level level in
+    Bus.write_local t.control_events control_event [@nontail]
 ;;
 
 let get_time_source t = t.time_source
 let set_time_source t time_source = t.time_source <- time_source
-let get_transform t = t.transform
-let set_transform t f = t.transform <- f
+let has_transform t = not (Doubly_linked.is_empty t.transforms)
+
+module Transform = struct
+  type t = (Message_event.t -> Message_event.t option) Doubly_linked.Elt.t
+
+  let add log f = function
+    | `Before -> Doubly_linked.insert_first log.transforms f
+    | `After -> Doubly_linked.insert_last log.transforms f
+  ;;
+
+  let remove_exn log t =
+    (* [Doubly_linked.remove] can raise if the transform is not a part of the log's
+       transforms. *)
+    Doubly_linked.remove log.transforms t
+  ;;
+end
+
+let clear_transforms t = Doubly_linked.clear t.transforms
+
+let transform t msg =
+  Doubly_linked.fold_until
+    t.transforms
+    ~init:msg
+    ~f:(fun msg transform ->
+      match transform msg with
+      | Some msg -> Continue msg
+      | None -> Stop None)
+    ~finish:Option.return
+;;
+
+let get_transform t =
+  (* This doesn’t use [transform] function above as [transforms] is mutable and this takes
+     a snapshot of it *)
+  match Doubly_linked.to_list t.transforms with
+  | [] -> None
+  | [ f ] -> Some f
+  | fs ->
+    Some
+      (fun msg ->
+        let rec loop fs msg =
+          match fs with
+          | [] -> Some msg
+          | f :: fs ->
+            (match f msg with
+             | None -> None
+             | Some msg -> loop fs msg)
+        in
+        loop fs msg)
+;;
+
+let set_transform t f =
+  clear_transforms t;
+  match f with
+  | None -> ()
+  | Some f ->
+    let (_ : Transform.t) = Transform.add t f `Before in
+    ()
+;;
 
 let copy t =
   create
@@ -116,14 +181,14 @@ let copy t =
     ~output:(get_output t)
     ~on_error:(get_on_error t)
     ~time_source:(Some (get_time_source t))
-    ~transform:(get_transform t)
+    ~transforms:(Doubly_linked.to_list t.transforms)
 ;;
 
 (* would_log is broken out and tested separately for every sending function to avoid the
    overhead of message allocation when we are just going to drop the message. *)
 let would_log t msg_level =
   let output_or_transform_is_enabled =
-    (not (Mutable_outputs.is_empty t.output)) || Option.is_some t.transform
+    (not (Mutable_outputs.is_empty t.output)) || has_transform t
   in
   output_or_transform_is_enabled
   && Level.as_or_more_verbose_than ~log_level:(level t) ~msg_level
@@ -133,15 +198,13 @@ let push_message_event t msg =
   (* We want to call [transform], even if we don't end up pushing the message to an
      output.  This allows for someone to listen to all messages that would theoretically
      be logged by this log (respecting level), and then maybe log them somewhere else. *)
-  let msg =
-    match t.transform with
-    | None -> msg
-    | Some f -> f msg
-  in
-  if not (Mutable_outputs.is_empty t.output)
-  then (
-    assert_open t "write message";
-    Mutable_outputs.write t.output msg)
+  match transform t msg with
+  | Some msg ->
+    if not (Mutable_outputs.is_empty t.output)
+    then (
+      assert_open t "write message";
+      Mutable_outputs.write t.output msg)
+  | None -> ()
 ;;
 
 let all_live_logs_flushed () =
@@ -149,3 +212,7 @@ let all_live_logs_flushed () =
   | Some live_logs -> Live_entry_registry.live_entries_flushed live_logs
   | None -> Deferred.unit
 ;;
+
+module For_testing = struct
+  let transform = transform
+end

@@ -61,11 +61,7 @@ let create ?rotate ?finalize ~flush write =
 ;;
 
 let create_expert = create_expert ?rotate:None
-
-let empty =
-  create_expert (fun (_ : Message_event.t Queue.t) -> Deferred.unit) ~flush:return
-;;
-
+let empty = create_unbuffered (ignore : Message_event.t -> unit) ~flush:return
 let write t = t.write
 let rotate t = t.rotate ()
 let flush t = t.flush ()

@@ -7,6 +7,13 @@ module Message_event = Message_event
 module Output = struct
   include Output
   module Format = Output_format
+
+  module Private = struct
+    include Private
+
+    let write = write
+    let flush = flush
+  end
 end
 
 module Ppx_log_syntax = struct

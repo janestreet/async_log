@@ -12,8 +12,29 @@ module type S = sig
   val set_on_error : [ `Raise | `Call of Error.t -> unit ] -> unit
   val get_time_source : unit -> Synchronous_time_source.t
   val set_time_source : Synchronous_time_source.t -> unit
-  val get_transform : unit -> (Message_event.t -> Message_event.t) option
-  val set_transform : (Message_event.t -> Message_event.t) option -> unit
+
+  module Transform : sig
+    type t
+
+    val append' : (Message_event.t -> Message_event.t option) -> t
+    val prepend' : (Message_event.t -> Message_event.t option) -> t
+    val append : (Message_event.t -> Message_event.t) -> unit
+    val prepend : (Message_event.t -> Message_event.t) -> unit
+    val remove_exn : t -> unit
+  end
+
+  val has_transform : unit -> bool
+  val clear_transforms : unit -> unit
+
+  val set_transform : (Message_event.t -> Message_event.t option) option -> unit
+  [@@deprecated "[since 2024-10] Use [Log.Global.Transform.add] instead"]
+
+  val get_transform : unit -> (Message_event.t -> Message_event.t option) option
+  [@@deprecated
+    "[since 2024-10] Getting the transform is not supported but transforms may cleared \
+     with [Log.Global.clear_transforms] or added to with [Log.Global.Transform.add]"]
+
+  val add_tags : tags:(string * string) list -> unit
   val would_log : Level.t option -> bool
   val set_level_via_param : unit -> unit Command.Param.t
 

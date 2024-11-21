@@ -79,6 +79,8 @@ module Output : sig
 
   module Private : sig
     val set_async_stderr_output : t lazy_t -> here:Source_code_position.t -> unit
+    val write : t -> Message_event.t -> unit
+    val flush : t -> unit Deferred.t
   end
 
   module For_testing : sig

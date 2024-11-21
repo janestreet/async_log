@@ -35,21 +35,77 @@ val get_time_source : t -> Synchronous_time_source.t
 
 val set_time_source : t -> Synchronous_time_source.t -> unit
 
-(** Changes the [transform] function within log.  This allows you to *synchronously*
-    change things about the message at the time that they were written.
+(** A [transform] is a function to be called on each log invocation *synchronously* that
+    can be used to change things about the message at the time that they were written.
 
     The transform function *will not* be called if the initial message is of a level that
-    would not currently be logged.
+    is more verbose than the level of the [Log.t].
 
     The transform function *will* be called if even if there are no log outputs.
-
-    The transform is applied after filtering the message by level, so if a message with
-    with a level of [Info] is logged to a log with a [Info] threshold, it will be
-    logged even if the transform turns the level to [Debug].
 *)
-val set_transform : t -> (Message_event.t -> Message_event.t) option -> unit
+module Transform : sig
+  type log := t
+  type t
 
-val get_transform : t -> (Message_event.t -> Message_event.t) option
+  (** Adds a transform to the end of the list of transforms applied to messages sent
+      through the log.
+
+      If the function raises, the exception will be raised immediately to the monitor that
+      the [[%log]] statement is in, and the message will not be logged.
+
+      [append t f; prepend t g] will cause a message to
+      first have [g] applied to it, then [f]. *)
+  val append : log -> (Message_event.t -> Message_event.t) -> unit
+
+  (** Adds a transform to the start of the list of transforms applied to messages sent
+      through the log.
+
+      If the function raises, the exception will be raised immediately to the monitor that
+      the [[%log]] statement is in, and the message will not be logged.
+
+      [append t f; prepend t g] will cause a message to
+      first have [g] applied to it, then [f]. *)
+  val prepend : log -> (Message_event.t -> Message_event.t) -> unit
+
+  (** Like {!append} except that a {!t} is returned which one can call {!remove_exn} with.
+      The function passed here may also return None to prevent messages from making it to
+      outputs or later transforms. *)
+  val append' : log -> (Message_event.t -> Message_event.t option) -> t
+
+  (** Like {!prepend} except that a {!t} is returned which one can call {!remove_exn} with.
+      The function passed here may also return None to prevent messages from making it to
+      outputs or later transforms. *)
+  val prepend' : log -> (Message_event.t -> Message_event.t option) -> t
+
+  (** [remove_exn] can be later used to remove a transform previously added to a log. This
+      must be called with the same (i.e. [phys_equal]) [Log.t] as the one the transform
+      was added to. *)
+  val remove_exn : log -> t -> unit
+end
+
+val has_transform : t -> bool
+val clear_transforms : t -> unit
+
+val set_transform : t -> (Message_event.t -> Message_event.t option) option -> unit
+[@@deprecated "[since 2024-10] Use [Log.Transform.add] instead"]
+
+val get_transform : t -> (Message_event.t -> Message_event.t option) option
+[@@deprecated
+  "[since 2024-10] Getting the transform is not supported but transforms may cleared \
+   with [Log.clear_transforms] or added to with [Log.Transform.add]"]
+
+(** One common transformation on message events is tagging every remaining message with a
+    list of fixed tags.
+
+    [add_tags t ~tags] is shorthand for [Transform.prepend t (Message_event.add_tags
+    ~tags)]. ([prepend] in this case means these tags are added before any other
+    transformation is applied, which we believe is more often wanted, e.g. if a later
+    transform flattens the message and tags into a single rendered string.)
+
+    This is not idempotent - if you add the same tags twice, they'll be included twice in
+    the resultant message.
+*)
+val add_tags : t -> tags:(string * string) list -> unit
 
 (** If [`Raise] is given, then background errors raised by logging will be raised to the
     monitor that was in scope when [create] was called.  Errors can be redirected anywhere
@@ -85,15 +141,19 @@ val create_null : unit -> t
 (** Creates a copy of a log, which has the same settings and logs to the same outputs. *)
 val copy : t -> t
 
-module Event : sig
+module Control_event : sig
   type t = Set_level of Level.t [@@deriving globalize, sexp_of]
 end
 
-(** A bus that may be subscribed to to get events which happen to this [t]. If you
-    subscribe to this bus and your callback raises, the error will be ignored. It is
-    recommended that you subscribe with [Bus.Subscribe] so that you may pass
+(** A bus that may be subscribed to to get control events which happen to this [t].
+
+    (In at least one case, this was used to watch for level changes and change a different
+    [Log.t]'s level in a different process in response.)
+
+    If you subscribe to this bus and your callback raises, the error will be ignored. It
+    is recommended that you subscribe with [Bus.Subscribe] so that you may pass
     [~on_callback_raise] there. *)
-val events : t -> (Event.t -> unit) Bus.Read_only.t
+val control_events : t -> (Control_event.t -> unit) Bus.Read_only.t
 
 (** Printf-like logging for messages at each log level or raw (no level) messages. Raw
     messages still include a timestamp. *)
@@ -221,6 +281,8 @@ module For_testing : sig
   (** [create_log ~map_output level] creates a [Log.t] with its level set to [level] using
       the output returned by [create_output], and an [on_error] value of `Raise. *)
   val create : map_output:(string -> string) -> Level.t -> t
+
+  val transform : t -> Message_event.t -> Message_event.t option
 end
 
 (**/**)
