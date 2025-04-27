@@ -21,7 +21,7 @@ module Output : sig
       calling [Log.flushed t].
 
       The [unit Deferred] returned by the function provides an opportunity for pushback if
-      that is important.  Only one batch of messages will be "in flight" at any time based
+      that is important. Only one batch of messages will be "in flight" at any time based
       on this deferred.
 
       [finalize] will be called when the output is finalized (meaning, no more open logs
@@ -48,8 +48,8 @@ module Output : sig
     -> (Message_event.t -> unit)
     -> t
 
-  (** [filter_to_level] wraps an output and gives you a new output which only
-      logs messages which are as/more verbose than [level].
+  (** [filter_to_level] wraps an output and gives you a new output which only logs
+      messages which are as/more verbose than [level].
 
       This functionality is intended for when you have multiple outputs being displayed in
       different places, and they need to be at different levels.
@@ -59,14 +59,14 @@ module Output : sig
       efficient. *)
   val filter_to_level : t -> level:Level.t -> t
 
-  (** [transform_message] wraps an output and gives you a new output which
-      transforms messages before writing.
+  (** [transform_message] wraps an output and gives you a new output which transforms
+      messages before writing.
 
-      This functionality is intended for when you have multiple outputs being displayed
-      in different places and they need to have different messages.
+      This functionality is intended for when you have multiple outputs being displayed in
+      different places and they need to have different messages.
 
-      If you have one output (or multiple outputs all using the same messages),
-      it is better to set the [Log.t]'s transform directly with [set_transform], which is
+      If you have one output (or multiple outputs all using the same messages), it is
+      better to set the [Log.t]'s transform directly with [set_transform], which is
       equivalent and more efficient. *)
   val transform_message : t -> f:(Message_event.t -> Message_event.t) -> t
 
@@ -78,9 +78,12 @@ module Output : sig
   module Format = Output_format
 
   module Private : sig
+    module Name = Output_name
+
     val set_async_stderr_output : t lazy_t -> here:Source_code_position.t -> unit
     val write : t -> Message_event.t -> unit
     val flush : t -> unit Deferred.t
+    val buffered_batch_size : int
   end
 
   module For_testing : sig
@@ -89,9 +92,9 @@ module Output : sig
 end
 
 module Ppx_log_syntax : sig
-  (** [Async_log.Ppx_log_syntax.Ppx_log_syntax] exists so that people can [open
-      Async_log.Ppx_log_syntax] to use ppx log, instead of doing a module alias. This is
-      consistent with [Monad.Syntax.Let_syntax]. *)
+  (** [Async_log.Ppx_log_syntax.Ppx_log_syntax] exists so that people can
+      [open Async_log.Ppx_log_syntax] to use ppx log, instead of doing a module alias.
+      This is consistent with [Monad.Syntax.Let_syntax]. *)
   module Ppx_log_syntax : module type of Ppx_log_syntax
 end
 

@@ -10,6 +10,7 @@ module Output = struct
 
   module Private = struct
     include Private
+    module Name = Output_name
 
     let write = write
     let flush = flush

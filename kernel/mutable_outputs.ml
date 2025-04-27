@@ -25,14 +25,19 @@ open! Import
 *)
 module State = struct
   type t =
-    { outputs : Output.t list
+    { default_outputs : Output.t list
+    ; named_outputs : Output.t Output_name.Map.t
     ; previous_outputs_flushed : unit Deferred.t
     ; stop_watching_for_background_errors : unit Ivar.t
     }
   [@@deriving fields ~getters ~iterators:create]
 
-  let watch_for_background_errors outputs ~stop ~on_background_output_error:on_error =
-    List.iter outputs ~f:(fun output ->
+  let all_outputs { default_outputs; named_outputs; _ } =
+    default_outputs @ Map.data named_outputs
+  ;;
+
+  let watch_for_background_errors t ~stop ~on_background_output_error:on_error =
+    List.iter (all_outputs t) ~f:(fun output ->
       match Output.Private.buffered_background_error output with
       | `Error e -> don't_wait_for (choose [ choice stop Fn.id; choice e on_error ])
       | `Output_is_unbuffered -> ())
@@ -41,10 +46,10 @@ module State = struct
   let flushed t =
     let open Eager_deferred.Use in
     let%bind () = t.previous_outputs_flushed in
-    Deferred.List.iter t.outputs ~how:`Sequential ~f:Output.flush
+    Deferred.List.iter (all_outputs t) ~how:`Sequential ~f:Output.flush
   ;;
 
-  let create outputs ~previous ~on_background_output_error =
+  let create ~default_outputs ~named_outputs ~previous ~on_background_output_error =
     let stop_watching_for_background_errors = Ivar.create () in
     let previous_outputs_flushed =
       match previous with
@@ -53,15 +58,25 @@ module State = struct
         let%map.Eager_deferred () = flushed previous in
         Ivar.fill_if_empty previous.stop_watching_for_background_errors ()
     in
+    let t =
+      { default_outputs
+      ; named_outputs
+      ; previous_outputs_flushed
+      ; stop_watching_for_background_errors
+      }
+    in
     watch_for_background_errors
-      outputs
+      t
       ~stop:(Ivar.read stop_watching_for_background_errors)
       ~on_background_output_error;
-    { outputs; previous_outputs_flushed; stop_watching_for_background_errors }
+    t
   ;;
 
-  let is_empty t = List.is_empty t.outputs
-  let write t msg = List.iter t.outputs ~f:(fun output -> Output.write output msg)
+  let is_empty t = t |> all_outputs |> List.is_empty
+
+  let write t msg =
+    t |> all_outputs |> List.iter ~f:(fun output -> Output.write output msg)
+  ;;
 end
 
 type t =
@@ -73,8 +88,13 @@ type t =
   ; on_background_output_error : exn -> unit
   }
 
-let create outputs ~on_background_output_error =
-  { state = State.create outputs ~previous:None ~on_background_output_error
+let create ~default_outputs ~named_outputs ~on_background_output_error =
+  { state =
+      State.create
+        ~default_outputs
+        ~named_outputs
+        ~previous:None
+        ~on_background_output_error
   ; last_update = `Not_a_flush
   ; on_background_output_error
   }
@@ -96,13 +116,35 @@ let flushed t =
     flush
 ;;
 
-let update_outputs t outputs =
+let update_default_outputs t outputs =
   t.last_update <- `Not_a_flush;
   t.state
   <- State.create
-       outputs
+       ~default_outputs:outputs
+       ~named_outputs:t.state.named_outputs
        ~previous:(Some t.state)
        ~on_background_output_error:t.on_background_output_error
 ;;
 
-let current_outputs t = t.state.outputs
+let update_named_outputs t named_outputs =
+  t.last_update <- `Not_a_flush;
+  t.state
+  <- State.create
+       ~default_outputs:t.state.default_outputs
+       ~named_outputs
+       ~previous:(Some t.state)
+       ~on_background_output_error:t.on_background_output_error
+;;
+
+let set_named_output t name output =
+  let named_outputs = Map.set t.state.named_outputs ~key:name ~data:output in
+  update_named_outputs t named_outputs
+;;
+
+let remove_named_output t name =
+  let named_outputs = Map.remove t.state.named_outputs name in
+  update_named_outputs t named_outputs
+;;
+
+let current_default_outputs t = t.state.default_outputs
+let current_named_outputs t = t.state.named_outputs

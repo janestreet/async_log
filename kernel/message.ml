@@ -3,8 +3,7 @@
     allowing older logs to be read by the new code.
 
     If you make a new version you must add a version to the Version module below and
-    should follow the Make_versioned_serializable pattern.
-*)
+    should follow the Make_versioned_serializable pattern. *)
 module Stable = struct
   open Core.Core_stable
 

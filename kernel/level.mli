@@ -1,9 +1,9 @@
 open! Core
 open! Import
 
-(** Describes both the level of a log and the level of a message sent to a log.  There
-    is an ordering to levels (`Debug < `Info < `Error), and a log set to a level will
-    never display messages at a lower log level.
+(** Describes both the level of a log and the level of a message sent to a log. There is
+    an ordering to levels (`Debug < `Info < `Error), and a log set to a level will never
+    display messages at a lower log level.
 
     Messages without a level are treated as `Info. *)
 type t =
@@ -20,6 +20,6 @@ val as_or_more_verbose_than : log_level:t -> msg_level:t option -> bool
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving bin_io, compare, sexp]
+    type nonrec t = t [@@deriving bin_io, compare, sexp, stable_witness]
   end
 end

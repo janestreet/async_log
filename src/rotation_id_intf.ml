@@ -6,8 +6,8 @@ module type S = sig
     -> Core.Time_float.Zone.t
     -> t
 
-  (** For any rotation scheme that renames logs on rotation, this defines how to do
-      the renaming. *)
+  (** For any rotation scheme that renames logs on rotation, this defines how to do the
+      renaming. *)
   val rotate_one : t -> t
 
   val to_string_opt : t -> string option

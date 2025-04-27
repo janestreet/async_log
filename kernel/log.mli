@@ -1,6 +1,6 @@
 (** A library for general logging.
 
-    Although this module is fully Async-safe it exposes almost no Deferreds.  This is
+    Although this module is fully Async-safe it exposes almost no Deferreds. This is
     partially a design choice to minimize the impact of logging in code, and partially the
     result of organic design (i.e., older versions of this interface did the same thing).
 
@@ -19,18 +19,17 @@ val set_level_via_param : t -> unit Command.Param.t
 (** Messages sent at a level less than the current level will not be output. *)
 val set_level : t -> Level.t -> unit
 
-(** Returns the last level passed to [set_level], which will be the log level
-    checked as a threshold against the level of the next message sent. *)
+(** Returns the last level passed to [set_level], which will be the log level checked as a
+    threshold against the level of the next message sent. *)
 val level : t -> Level.t
 
-(** Changes the output type of the log, which can be useful when daemonizing.
-    The new output type will be applied to all subsequent messages. *)
+(** Changes the output type of the log, which can be useful when daemonizing. The new
+    output type will be applied to all subsequent messages. *)
 val set_output : t -> Output.t list -> unit
 
 val get_output : t -> Output.t list
 
-(** Changes the time source of the log, which controls the default timestamp on
-    messages. *)
+(** Changes the time source of the log, which controls the default timestamp on messages. *)
 val get_time_source : t -> Synchronous_time_source.t
 
 val set_time_source : t -> Synchronous_time_source.t -> unit
@@ -41,8 +40,7 @@ val set_time_source : t -> Synchronous_time_source.t -> unit
     The transform function *will not* be called if the initial message is of a level that
     is more verbose than the level of the [Log.t].
 
-    The transform function *will* be called if even if there are no log outputs.
-*)
+    The transform function *will* be called if even if there are no log outputs. *)
 module Transform : sig
   type log := t
   type t
@@ -53,8 +51,8 @@ module Transform : sig
       If the function raises, the exception will be raised immediately to the monitor that
       the [[%log]] statement is in, and the message will not be logged.
 
-      [append t f; prepend t g] will cause a message to
-      first have [g] applied to it, then [f]. *)
+      [append t f; prepend t g] will cause a message to first have [g] applied to it, then
+      [f]. *)
   val append : log -> (Message_event.t -> Message_event.t) -> unit
 
   (** Adds a transform to the start of the list of transforms applied to messages sent
@@ -63,8 +61,8 @@ module Transform : sig
       If the function raises, the exception will be raised immediately to the monitor that
       the [[%log]] statement is in, and the message will not be logged.
 
-      [append t f; prepend t g] will cause a message to
-      first have [g] applied to it, then [f]. *)
+      [append t f; prepend t g] will cause a message to first have [g] applied to it, then
+      [f]. *)
   val prepend : log -> (Message_event.t -> Message_event.t) -> unit
 
   (** Like {!append} except that a {!t} is returned which one can call {!remove_exn} with.
@@ -72,9 +70,9 @@ module Transform : sig
       outputs or later transforms. *)
   val append' : log -> (Message_event.t -> Message_event.t option) -> t
 
-  (** Like {!prepend} except that a {!t} is returned which one can call {!remove_exn} with.
-      The function passed here may also return None to prevent messages from making it to
-      outputs or later transforms. *)
+  (** Like {!prepend} except that a {!t} is returned which one can call {!remove_exn}
+      with. The function passed here may also return None to prevent messages from making
+      it to outputs or later transforms. *)
   val prepend' : log -> (Message_event.t -> Message_event.t option) -> t
 
   (** [remove_exn] can be later used to remove a transform previously added to a log. This
@@ -97,18 +95,22 @@ val get_transform : t -> (Message_event.t -> Message_event.t option) option
 (** One common transformation on message events is tagging every remaining message with a
     list of fixed tags.
 
-    [add_tags t ~tags] is shorthand for [Transform.prepend t (Message_event.add_tags
-    ~tags)]. ([prepend] in this case means these tags are added before any other
-    transformation is applied, which we believe is more often wanted, e.g. if a later
-    transform flattens the message and tags into a single rendered string.)
+    [add_tags t ~tags] is shorthand for
+    [Transform.prepend t (Message_event.add_tags ~tags)]. ([prepend] in this case means
+    these tags are added before any other transformation is applied, which we believe is
+    more often wanted, e.g. if a later transform flattens the message and tags into a
+    single rendered string.)
 
     This is not idempotent - if you add the same tags twice, they'll be included twice in
-    the resultant message.
-*)
+    the resultant message. *)
 val add_tags : t -> tags:(string * string) list -> unit
 
+(** Like {!add_tags} except that a {!Transform.t} is returned which one can call
+    {!Transform.remove_exn} with. *)
+val add_tags' : t -> tags:(string * string) list -> Transform.t
+
 (** If [`Raise] is given, then background errors raised by logging will be raised to the
-    monitor that was in scope when [create] was called.  Errors can be redirected anywhere
+    monitor that was in scope when [create] was called. Errors can be redirected anywhere
     by providing [`Call f]. *)
 val get_on_error : t -> [ `Raise | `Call of Error.t -> unit ]
 
@@ -124,8 +126,8 @@ val is_closed : t -> bool
     the call to [flushed] is out the door. *)
 val flushed : t -> unit Deferred.t
 
-(** Creates a new log.  See [set_level], [set_on_error], [set_output],
-    [set_time_source], and [set_transform] for more. *)
+(** Creates a new log. See [set_level], [set_on_error], [set_output], [set_time_source],
+    and [set_transform] for more. *)
 val create
   :  level:Level.t
   -> output:Output.t list
@@ -138,8 +140,15 @@ val create
 (** Log that drops messages sent to it, as if it wrote to /dev/null *)
 val create_null : unit -> t
 
-(** Creates a copy of a log, which has the same settings and logs to the same outputs. *)
-val copy : t -> t
+(** Make a copy of this log, with potentially some settings changed, or potentially extra
+    tags added to each line. *)
+val copy
+  :  ?level:Level.t
+  -> ?on_error:[ `Call of Error.t -> unit | `Raise ]
+  -> ?output:Output.t list
+  -> ?extra_tags:(string * string) list
+  -> t
+  -> t
 
 module Control_event : sig
   type t = Set_level of Level.t [@@deriving globalize, sexp_of]
@@ -239,7 +248,7 @@ val message_event : t -> Message_event.t -> unit
     after [f] returns or raises. If [f] raises, the second message will include the
     exception, and [surround] itself will re-raise the exception tagged with [message].
     [on_subsequent_errors] is passed to the internal monitor as [rest] argument. As usual,
-    the logging happens only if [level] exceeds the minimum level of [t].*)
+    the logging happens only if [level] exceeds the minimum level of [t]. *)
 val surround_s
   :  on_subsequent_errors:[ `Call of exn -> unit | `Log | `Raise ]
   -> ?level:Level.t
@@ -262,8 +271,8 @@ val surroundf
 (** [would_log] returns true if a message at the given log level would be logged if sent
     immediately.
 
-    This will return [false] if there are no outputs for the log, unless there is
-    a [transform] set. *)
+    This will return [false] if there are no outputs for the log, unless there is a
+    [transform] set. *)
 val would_log : t -> Level.t option -> bool
 
 module For_testing : sig
@@ -271,8 +280,8 @@ module For_testing : sig
       [Message.message] to stdout, discarding any information about tags, levels, or
       timestamps.
 
-      [map_output] will be applied to each string before printing, and is expected
-      to be used to replace portions of output or identify which log a message came from.
+      [map_output] will be applied to each string before printing, and is expected to be
+      used to replace portions of output or identify which log a message came from.
 
       This function is best used with existing Log.ts, e.g. to replace Log.Global's
       outputs in expect tests. If you just want a full Log.t, see [create] below. *)
@@ -292,4 +301,20 @@ module Private : sig
   val set_async_trace_hook : (unit -> Univ.t option) -> unit
   val set_level_via_param_lazy : t Lazy.t -> unit Command.Param.t
   val all_live_logs_flushed : unit -> unit Deferred.t
+
+  (** A named output is just a regular [Log.Output.t] with a name, but is not affected by
+      [Log.set_output] and [Log.get_output]. It can be used to register outputs that you
+      don't want the users to change accidentally.
+
+      Use [set_named_output] and [remove_named_output] to modify the named outputs
+      explicitly. *)
+  val set_named_output : t -> Output_name.t -> Output.t -> unit
+
+  val get_named_output : t -> Output_name.t -> Output.t option
+  val remove_named_output : t -> Output_name.t -> unit
+
+  module For_testing : sig
+    val get_named_outputs : t -> Output.t Output_name.Map.t
+    val update_named_outputs : t -> Output.t Output_name.Map.t -> unit
+  end
 end

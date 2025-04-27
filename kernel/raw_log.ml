@@ -57,7 +57,7 @@ let live_logs =
        end))
 ;;
 
-let create ~level ~output ~on_error ~time_source ~transforms =
+let create ~level ~default_outputs ~named_outputs ~on_error ~time_source ~transforms =
   let time_source =
     match time_source with
     | Some time_source -> time_source
@@ -68,13 +68,14 @@ let create ~level ~output ~on_error ~time_source ~transforms =
   in
   let on_error = ref on_error in
   let output =
-    Mutable_outputs.create output ~on_background_output_error:(fun exn ->
-      On_error.handle_error !on_error exn)
+    Mutable_outputs.create
+      ~default_outputs
+      ~named_outputs
+      ~on_background_output_error:(fun exn -> On_error.handle_error !on_error exn)
   in
   let id = Id.create () in
   let control_events =
     Bus.create_exn
-      [%here]
       Arity1_local
       ~on_subscription_after_first_write:Allow
       ~on_callback_raise:(ignore : Error.t -> unit)
@@ -97,10 +98,11 @@ let create ~level ~output ~on_error ~time_source ~transforms =
 
 let set_output t new_outputs =
   assert_open t "set output";
-  Mutable_outputs.update_outputs t.output new_outputs
+  Mutable_outputs.update_default_outputs t.output new_outputs
 ;;
 
-let get_output t = Mutable_outputs.current_outputs t.output
+let get_output t = Mutable_outputs.current_default_outputs t.output
+let get_named_outputs t = Mutable_outputs.current_named_outputs t.output
 let get_on_error t = !(t.on_error)
 let set_on_error t handler = t.on_error := handler
 let level t = t.level
@@ -178,7 +180,8 @@ let set_transform t f =
 let copy t =
   create
     ~level:(level t)
-    ~output:(get_output t)
+    ~default_outputs:(get_output t)
+    ~named_outputs:(get_named_outputs t)
     ~on_error:(get_on_error t)
     ~time_source:(Some (get_time_source t))
     ~transforms:(Doubly_linked.to_list t.transforms)
@@ -212,6 +215,32 @@ let all_live_logs_flushed () =
   | Some live_logs -> Live_entry_registry.live_entries_flushed live_logs
   | None -> Deferred.unit
 ;;
+
+module Private = struct
+  let set_named_output t name output =
+    assert_open t "set named output";
+    Mutable_outputs.set_named_output t.output name output
+  ;;
+
+  let get_named_output t name =
+    assert_open t "get named output";
+    Mutable_outputs.current_named_outputs t.output |> Fn.flip Map.find name
+  ;;
+
+  let remove_named_output t name =
+    assert_open t "remove named output";
+    Mutable_outputs.remove_named_output t.output name
+  ;;
+
+  module For_testing = struct
+    let get_named_outputs = get_named_outputs
+
+    let update_named_outputs t named_outputs =
+      assert_open t "update named outputs";
+      Mutable_outputs.update_named_outputs t.output named_outputs
+    ;;
+  end
+end
 
 module For_testing = struct
   let transform = transform

@@ -17,6 +17,11 @@ module Make () = struct
   ;;
 
   let level () = Log.level (Lazy.force log)
+
+  let copy ?level ?on_error ?output ?extra_tags () =
+    Log.copy ?level ?on_error ?output ?extra_tags (Lazy.force log)
+  ;;
+
   let set_level level = Log.set_level (Lazy.force log) level
   let set_output output = Log.set_output (Lazy.force log) output
   let get_output () = Log.get_output (Lazy.force log)
@@ -43,6 +48,28 @@ module Make () = struct
   let raw ?time ?tags k = Log.raw ?time ?tags (Lazy.force log) k
   let info ?time ?tags k = Log.info ?time ?tags (Lazy.force log) k
   let error ?time ?tags k = Log.error ?time ?tags (Lazy.force log) k
+  let async_command_error_output_names = ref []
+
+  let register_async_command_error_output_name output_name =
+    async_command_error_output_names := output_name :: !async_command_error_output_names
+  ;;
+
+  let error_from_async_command ?time ?tags fmt =
+    ksprintf
+      (fun msg ->
+        let log = Lazy.force log in
+        let original_outputs = Log.get_output log in
+        let outputs =
+          List.filter_map
+            !async_command_error_output_names
+            ~f:(Log.Private.get_named_output log)
+        in
+        Log.set_output log outputs;
+        Log.string log ~level:`Error ?time ?tags msg;
+        Log.set_output log original_outputs)
+      fmt
+  ;;
+
   let debug ?time ?tags k = Log.debug ?time ?tags (Lazy.force log) k
   let raw_s ?time ?tags the_sexp = Log.sexp ?time ?tags (Lazy.force log) the_sexp
 
