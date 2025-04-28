@@ -5,7 +5,7 @@ module Stable = struct
       | `Info
       | `Error
       ]
-    [@@deriving bin_io, compare, sexp]
+    [@@deriving bin_io, compare, sexp, stable_witness]
 
     let%expect_test "bin_digest Level.V1" =
       print_endline [%bin_digest: t];

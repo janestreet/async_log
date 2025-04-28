@@ -162,14 +162,23 @@ module For_testing = struct
   let create_output = Output.For_testing.create
 
   let create ~map_output level =
-    let output = [ create_output ~map_output ] in
-    create ~output ~level ~on_error:`Raise ~time_source:None ~transforms:[]
+    let default_outputs = [ create_output ~map_output ] in
+    let named_outputs = Output_name.Map.empty in
+    create
+      ~default_outputs
+      ~named_outputs
+      ~level
+      ~on_error:`Raise
+      ~time_source:None
+      ~transforms:[]
   ;;
 
   let transform = For_testing.transform
 end
 
 module Private = struct
+  include Private
+
   let push_message_event = Raw_log.push_message_event
   let set_async_trace_hook f = async_trace_hook := Some f
   let set_level_via_param_lazy = set_level_via_param_lazy
@@ -177,12 +186,13 @@ module Private = struct
 end
 
 let create ~level ~output ~on_error ?time_source ?transform () =
+  let named_outputs = Output_name.Map.empty in
   let transforms =
     match transform with
     | None -> []
     | Some transform -> [ (fun msg -> Some (transform msg)) ]
   in
-  create ~level ~output ~on_error ~time_source ~transforms
+  create ~level ~default_outputs:output ~named_outputs ~on_error ~time_source ~transforms
 ;;
 
 module Transform = struct
@@ -198,6 +208,20 @@ module Transform = struct
 end
 
 let add_tags t ~tags = Transform.prepend t (Message_event.add_tags ~tags)
+
+let add_tags' t ~tags =
+  Transform.prepend' t (fun message_event ->
+    Some (Message_event.add_tags message_event ~tags))
+;;
+
+let copy ?level ?on_error ?output ?extra_tags t =
+  let t = copy t in
+  Option.iter level ~f:(set_level t);
+  Option.iter on_error ~f:(set_on_error t);
+  Option.iter output ~f:(set_output t);
+  Option.iter extra_tags ~f:(fun tags -> add_tags t ~tags);
+  t
+;;
 
 let create_null () =
   create ~level:`Error ~output:[] ~on_error:(`Call (fun (_ : Error.t) -> ())) ()

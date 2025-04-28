@@ -10,7 +10,8 @@ end
 
 val create
   :  level:Level.t
-  -> output:Output.t list
+  -> default_outputs:Output.t list
+  -> named_outputs:Output.t Output_name.Map.t
   -> on_error:On_error.t
   -> time_source:Synchronous_time_source.t option
   -> transforms:(Message_event.t -> Message_event.t option) list
@@ -50,6 +51,17 @@ val would_log : t -> Level.t option -> bool
 val push_message_event : t -> Message_event.t -> unit
 val all_live_logs_flushed : unit -> unit Deferred.t
 val control_events : t -> (Control_event.t -> unit) Bus.Read_only.t
+
+module Private : sig
+  val set_named_output : t -> Output_name.t -> Output.t -> unit
+  val get_named_output : t -> Output_name.t -> Output.t option
+  val remove_named_output : t -> Output_name.t -> unit
+
+  module For_testing : sig
+    val get_named_outputs : t -> Output.t Output_name.Map.t
+    val update_named_outputs : t -> Output.t Output_name.Map.t -> unit
+  end
+end
 
 module For_testing : sig
   val transform : t -> Message_event.t -> Message_event.t option

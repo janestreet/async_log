@@ -2,14 +2,13 @@ open! Core
 open! Async_kernel
 open! Import
 
-(** Async programs often have a non-Async portion that runs before the scheduler begins
-    to capture command line options, do setup, read configs, etc.  This module provides
-    limited global logging functions to be used during that period.  Calling these
-    functions after the scheduler has started will raise an exception.  They otherwise
+(** Async programs often have a non-Async portion that runs before the scheduler begins to
+    capture command line options, do setup, read configs, etc. This module provides
+    limited global logging functions to be used during that period. Calling these
+    functions after the scheduler has started will raise an exception. They otherwise
     behave similarly to the logging functions in the Async world.
 
-    There are more detailed comments for the API below near the non-blocking
-    signatures. *)
+    There are more detailed comments for the API below near the non-blocking signatures. *)
 
 module Output : sig
   type t

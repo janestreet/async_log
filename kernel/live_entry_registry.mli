@@ -16,8 +16,7 @@ type 'a t
 val create : (module S with type t = 'a) -> 'a t
 
 (** [register t entry] causes [entry] to be closed when it's GC'd, and flushed (if not
-    already closed) at shutdown.
-*)
+    already closed) at shutdown. *)
 val register : 'a t -> 'a -> unit
 
 val live_entries_flushed : _ t -> unit Deferred.t

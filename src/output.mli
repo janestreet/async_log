@@ -27,8 +27,8 @@ val rotating_file
   -> Rotation.t
   -> t
 
-(** Returns a tail of the filenames. When [rotate] is called, the previous filename is
-    put on the tail *)
+(** Returns a tail of the filenames. When [rotate] is called, the previous filename is put
+    on the tail *)
 val rotating_file_with_tail
   :  ?perm:Unix.file_perm
   -> ?time_source:Synchronous_time_source.t

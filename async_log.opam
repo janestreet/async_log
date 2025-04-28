@@ -17,7 +17,7 @@ depends: [
   "core_kernel"
   "core_unix"
   "ppx_jane"
-  "dune"         {>= "3.11.0"}
+  "dune"         {>= "3.17.0"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "Logging library built on top of Async_unix"

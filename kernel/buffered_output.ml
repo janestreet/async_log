@@ -19,7 +19,28 @@ module State = struct
     }
   [@@deriving fields ~getters]
 
-  let batch_size = 100
+  (* Experimentally
+     - based on 100M log lines generated in 1k async cycles
+     - long async cycles is the longest cycle >1ms and ignoring long async cycles from
+       the initial log generation
+
+
+                              long async cycles 
+     | batch_size | runtime | 1-10ms | 100ms | 1s | 10s | 100s |
+     +------------+---------+--------+-------+----+-----+------+
+     |     legacy | 1m37s   |      3 |    68 |  4 |   2 |    1 |
+     |         10 | 3m26s   |    591 |    18 |  4 |     |      |
+     |         20 | 2m33s   |    216 |     3 |  5 |     |      |
+     |         50 | 2m02s   |    162 |     3 |  4 |     |      |
+     |        100 | 1m49s   |    541 |    10 |  5 |     |      |
+     |        200 | 1m44s   |    148 |     3 |  4 |     |      |
+     |        500 | 1m43s   |    306 |    18 |  5 |     |      |
+     |       1000 | 1m43s   |  18365 |    13 |  4 |     |      |
+     |       2000 | 1m46s   |  48984 |    24 |  5 |     |      |
+     |       5000 | 1m41s   |  18971 |    36 |  4 |     |      |
+     |      10000 | 1m38s   |   8584 |   426 |  3 |     |      |
+  *)
+  let batch_size = 500
   let create ~flush ~write ~rotate = { flush; write; rotate; msgs = Queue.create () }
 
   let write_msgs_to_output t ~and_then =
@@ -37,14 +58,18 @@ module State = struct
        (1) if a [Msg] is processed, there's no new async job created
        (2) If [Queue.length msgs = 0], then [f] is called immediately. *)
     let rec loop yield_every =
-      let yield_every = yield_every - 1 in
       if yield_every = 0
-      then (
+      then
         (* this introduces a yield point so that other async jobs have a chance to run
            under circumstances when large batches of logs are delivered in bursts. *)
-        let%bind () = Async_kernel_scheduler.yield () in
-        loop batch_size)
+        write_msgs_to_output t ~and_then:(fun () ->
+          let%bind () = Async_kernel_scheduler.yield () in
+          loop batch_size)
       else (
+        (* only decrement [yield_every] inside this branch
+           so we actually consume [batch_size] items from the pipe
+           before yielding. *)
+        let yield_every = yield_every - 1 in
         match Queue.dequeue updates with
         | None -> write_msgs_to_output t ~and_then:return
         | Some update ->
@@ -106,3 +131,7 @@ let flushed t =
 
 let rotate t = Deferred.create (fun i -> push_update t (Rotate i))
 let write t msg = push_update t (Msg msg)
+
+module Private = struct
+  let batch_size = State.batch_size
+end

@@ -9,8 +9,7 @@ open! Import
     (This module's signature is tight / bare to keep the type extensible and
     backwards-compatible with previous behaviour, but this isn't intended to deter any
     users who may wish for an accessor to be added, especially for newer structured info
-    in [Message_sexp.t].)
-*)
+    in [Message_sexp.t].) *)
 type t
 
 val create

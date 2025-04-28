@@ -44,6 +44,7 @@ module Private : sig
     -> [ `Output_is_unbuffered | `Error of exn Deferred.t ]
 
   val set_async_stderr_output : t lazy_t -> here:Source_code_position.t -> unit
+  val buffered_batch_size : int
 end
 
 module For_testing : sig
