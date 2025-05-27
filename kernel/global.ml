@@ -104,7 +104,7 @@ module Make () = struct
     Log.surroundf ~on_subsequent_errors ?level ?time ?tags (Lazy.force log) fmt
   ;;
 
-  let set_level_via_param () = Log.Private.set_level_via_param_lazy log
+  let set_level_via_param ?default () = Log.Private.set_level_via_param_lazy ~default log
 
   module For_testing = struct
     let use_test_output ?(map_output = Fn.id) () =

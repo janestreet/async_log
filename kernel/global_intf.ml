@@ -47,7 +47,12 @@ module type S = sig
 
   val add_tags : tags:(string * string) list -> unit
   val would_log : Level.t option -> bool
-  val set_level_via_param : unit -> unit Command.Param.t
+
+  (** Sets the global log level via a flag, if provided.
+
+      If [default] is not provided, the existing log level will be unchanged if the flag
+      is not provided. *)
+  val set_level_via_param : ?default:Level.t -> unit -> unit Command.Param.t
 
   (** Functions that operate on a given log. In this case they operate on a single log
       global to the module. *)

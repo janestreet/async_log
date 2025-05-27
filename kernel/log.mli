@@ -13,8 +13,11 @@ open! Import
 
 type t [@@deriving sexp_of]
 
-(** Sets the log level via a flag, if provided. *)
-val set_level_via_param : t -> unit Command.Param.t
+(** Sets the log level via a flag, if provided.
+
+    If [default] is not provided, the existing log level will be unchanged if the flag is
+    not provided. *)
+val set_level_via_param : ?default:Level.t -> t -> unit Command.Param.t
 
 (** Messages sent at a level less than the current level will not be output. *)
 val set_level : t -> Level.t -> unit
@@ -299,7 +302,12 @@ end
 module Private : sig
   val push_message_event : t -> Message_event.t -> unit
   val set_async_trace_hook : (unit -> Univ.t option) -> unit
-  val set_level_via_param_lazy : t Lazy.t -> unit Command.Param.t
+
+  val set_level_via_param_lazy
+    :  t Lazy.t
+    -> default:Level.t option
+    -> unit Command.Param.t
+
   val all_live_logs_flushed : unit -> unit Deferred.t
 
   (** A named output is just a regular [Log.Output.t] with a name, but is not affected by
