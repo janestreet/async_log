@@ -136,17 +136,19 @@ let surroundf ~on_subsequent_errors ?level ?time ?tags t fmt =
     fmt
 ;;
 
-let set_level_via_param_helper ~f =
+let set_level_via_param_helper ~default ~f =
   let open Command.Param in
   map
     (flag "log-level" (optional Level.arg) ~doc:"LEVEL The log level")
-    ~f:(Option.iter ~f)
+    ~f:(fun level -> Option.first_some level default |> Option.iter ~f)
 ;;
 
-let set_level_via_param log = set_level_via_param_helper ~f:(set_level log)
+let set_level_via_param ?default log =
+  set_level_via_param_helper ~default ~f:(set_level log)
+;;
 
-let set_level_via_param_lazy log =
-  set_level_via_param_helper ~f:(fun level -> set_level (Lazy.force log) level)
+let set_level_via_param_lazy log ~default =
+  set_level_via_param_helper ~default ~f:(fun level -> set_level (Lazy.force log) level)
 ;;
 
 let raw ?time ?tags t fmt = printf ?time ?tags t fmt

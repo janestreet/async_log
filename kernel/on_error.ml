@@ -18,6 +18,6 @@ let send_to_top_level_monitor =
 ;;
 
 let handle_error = function
-  | `Raise -> raise
+  | `Raise -> fun x -> raise x
   | `Call f -> Fn.compose f Error.of_exn
 ;;
