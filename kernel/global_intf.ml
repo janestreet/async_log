@@ -22,7 +22,7 @@ module type S = sig
   val get_output : unit -> Output.t list
   val set_on_error : [ `Raise | `Call of Error.t -> unit ] -> unit
   val get_time_source : unit -> Synchronous_time_source.t
-  val set_time_source : Synchronous_time_source.t -> unit
+  val set_time_source : [> read ] Synchronous_time_source.T1.t -> unit
 
   module Transform : sig
     type t

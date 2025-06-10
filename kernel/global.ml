@@ -27,7 +27,10 @@ module Make () = struct
   let get_output () = Log.get_output (Lazy.force log)
   let set_on_error handler = Log.set_on_error (Lazy.force log) handler
   let get_time_source () = Log.get_time_source (Lazy.force log)
-  let set_time_source time_source = Log.set_time_source (Lazy.force log) time_source
+
+  let set_time_source time_source =
+    Log.set_time_source (Lazy.force log) (Synchronous_time_source.read_only time_source)
+  ;;
 
   module Transform = struct
     type t = Log.Transform.t

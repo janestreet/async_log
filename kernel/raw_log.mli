@@ -13,7 +13,7 @@ val create
   -> default_outputs:Output.t list
   -> named_outputs:Output.t Output_name.Map.t
   -> on_error:On_error.t
-  -> time_source:Synchronous_time_source.t option
+  -> time_source:[> read ] Synchronous_time_source.T1.t option
   -> transforms:(Message_event.t -> Message_event.t option) list
   -> t
 
@@ -23,7 +23,7 @@ val set_level : t -> Level.t -> unit
 val set_output : t -> Output.t list -> unit
 val get_output : t -> Output.t list
 val get_time_source : t -> Synchronous_time_source.t
-val set_time_source : t -> Synchronous_time_source.t -> unit
+val set_time_source : t -> [> read ] Synchronous_time_source.T1.t -> unit
 val has_transform : t -> bool
 
 module Transform : sig

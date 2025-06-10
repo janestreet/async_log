@@ -35,7 +35,7 @@ val get_output : t -> Output.t list
 (** Changes the time source of the log, which controls the default timestamp on messages. *)
 val get_time_source : t -> Synchronous_time_source.t
 
-val set_time_source : t -> Synchronous_time_source.t -> unit
+val set_time_source : t -> [> read ] Synchronous_time_source.T1.t -> unit
 
 (** A [transform] is a function to be called on each log invocation *synchronously* that
     can be used to change things about the message at the time that they were written.
@@ -135,7 +135,7 @@ val create
   :  level:Level.t
   -> output:Output.t list
   -> on_error:[ `Raise | `Call of Error.t -> unit ]
-  -> ?time_source:Synchronous_time_source.t
+  -> ?time_source:[> read ] Synchronous_time_source.T1.t
   -> ?transform:(Message_event.t -> Message_event.t)
   -> unit
   -> t
