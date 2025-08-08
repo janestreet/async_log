@@ -2,13 +2,16 @@ open! Core
 open! Import
 
 module T = struct
-  type t = Log.t
   type time = Time_float.t
-  type return_type = unit
 
-  let would_log = Log.would_log
-  let message = Log.structured_message
-  let default = ()
+  module Instance = struct
+    type t = Log.t
+    type return_type = unit
+
+    let would_log = Log.would_log
+    let message = Log.structured_message
+    let default = ()
+  end
 end
 
 include T

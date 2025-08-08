@@ -5,7 +5,7 @@ module Stable = struct
       | `Info
       | `Error
       ]
-    [@@deriving bin_io, compare, sexp, stable_witness]
+    [@@deriving bin_io, compare ~localize, sexp, stable_witness]
 
     let%expect_test "bin_digest Level.V1" =
       print_endline [%bin_digest: t];
@@ -20,7 +20,8 @@ module T = struct
     | `Info
     | `Error
     ]
-  [@@deriving bin_io, compare, enumerate, equal, globalize, sexp, sexp_grammar]
+  [@@deriving
+    bin_io, compare ~localize, enumerate, equal ~localize, globalize, sexp, sexp_grammar]
 
   let to_string = function
     | `Debug -> "Debug"

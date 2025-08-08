@@ -59,7 +59,7 @@ let live_logs =
 
 let create ~level ~default_outputs ~named_outputs ~on_error ~time_source ~transforms =
   let time_source =
-    match time_source with
+    match Option.map time_source ~f:Synchronous_time_source.read_only with
     | Some time_source -> time_source
     | None ->
       if Ppx_inline_test_lib.am_running
@@ -117,7 +117,11 @@ let set_level t level =
 ;;
 
 let get_time_source t = t.time_source
-let set_time_source t time_source = t.time_source <- time_source
+
+let set_time_source t time_source =
+  t.time_source <- Synchronous_time_source.read_only time_source
+;;
+
 let has_transform t = not (Doubly_linked.is_empty t.transforms)
 
 module Transform = struct

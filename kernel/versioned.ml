@@ -2,7 +2,7 @@ module Stable = struct
   open Core.Core_stable
 
   module Version = struct
-    type t = V2 [@@deriving bin_io, sexp, compare]
+    type t = V2 [@@deriving bin_io, sexp, compare ~localize]
 
     let%expect_test "bin_digest Message.Version.V2" =
       print_endline [%bin_digest: t];

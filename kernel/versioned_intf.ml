@@ -11,7 +11,7 @@ end
 module type Versioned = sig
   module Stable : sig
     module Version : sig
-      type t = V2 [@@deriving bin_io, sexp, compare]
+      type t = V2 [@@deriving bin_io, sexp, compare ~localize]
 
       val ( <> ) : t -> t -> bool
       val to_string : t -> string

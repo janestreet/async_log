@@ -5,11 +5,11 @@ type t =
   { time : Time_float.t
   ; level : Level.t option
   ; raw_message : Message_data.t
-      (* [`Sexp] comes from uses of [%log.sexp] or from upstream logs, and [`String] comes
-     from uses of [%log.string]; [`Sexp | `String] can also come from message events
+      (* [`Sexp] comes from uses of [%log.t.sexp] or from upstream logs, and [`String] comes
+     from uses of [%log.t.string]; [`Sexp | `String] can also come from message events
      reconstructed out of serialized [Message]s.
 
-     [`Structured] comes from uses of [%log]. *)
+     [`Structured] comes from uses of [%log.t]. *)
   ; source : Message_source.t
   ; legacy_tags : (string * string) list
   ; user_scope : string option
