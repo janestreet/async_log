@@ -28,10 +28,6 @@ module Stable : sig
   module T1 : sig
     module V2 : sig
       type 'time t = 'time T1.t [@@deriving bin_io, sexp]
-
-      module For_testing : sig
-        type 'time t_as_v0 = 'time t [@@deriving sexp_of]
-      end
     end
   end
 end

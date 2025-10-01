@@ -2,12 +2,6 @@ module Stable = struct
   module V2 = struct
     type t = Time_float_unix.t Async_log_kernel.Message.Stable.T1.V2.t
     [@@deriving bin_io, sexp]
-
-    module For_testing = struct
-      type t_as_v0 =
-        Time_float_unix.t Async_log_kernel.Message.Stable.T1.V2.For_testing.t_as_v0
-      [@@deriving sexp_of]
-    end
   end
 end
 
