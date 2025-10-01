@@ -11,7 +11,8 @@ type t =
   | `Info (** default level *)
   | `Error
   ]
-[@@deriving bin_io, compare, enumerate, equal, globalize, sexp, sexp_grammar]
+[@@deriving
+  bin_io, compare ~localize, enumerate, equal ~localize, globalize, sexp, sexp_grammar]
 
 include Stringable with type t := t
 
@@ -20,6 +21,6 @@ val as_or_more_verbose_than : log_level:t -> msg_level:t option -> bool
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving bin_io, compare, sexp, stable_witness]
+    type nonrec t = t [@@deriving bin_io, compare ~localize, sexp, stable_witness]
   end
 end

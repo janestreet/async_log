@@ -52,7 +52,7 @@ module Transform : sig
       through the log.
 
       If the function raises, the exception will be raised immediately to the monitor that
-      the [[%log]] statement is in, and the message will not be logged.
+      the [[%log.t]] statement is in, and the message will not be logged.
 
       [append t f; prepend t g] will cause a message to first have [g] applied to it, then
       [f]. *)
@@ -62,7 +62,7 @@ module Transform : sig
       through the log.
 
       If the function raises, the exception will be raised immediately to the monitor that
-      the [[%log]] statement is in, and the message will not be logged.
+      the [[%log.t]] statement is in, and the message will not be logged.
 
       [append t f; prepend t g] will cause a message to first have [g] applied to it, then
       [f]. *)

@@ -1,9 +1,9 @@
 (** @open *)
 include
   Ppx_log_types.S
-  with type t = Log.t
-   and type time = Core.Time_float.t
-   and type return_type = unit
+  with type time = Core.Time_float.t
+   and type Instance.t = Log.t
+   and type Instance.return_type = unit
    and type Global.return_type = unit
 
 (** If you wish you prevent global logging with ppx_log, you can open this module and any
@@ -12,8 +12,8 @@ include
 module No_global : sig
   module Ppx_log_syntax :
     Ppx_log_types.S
-    with type t = Log.t
-     and type time = Core.Time_float.t
-     and type return_type = unit
+    with type time = Core.Time_float.t
+     and type Instance.t = Log.t
+     and type Instance.return_type = unit
      and type Global.return_type = [ `Do_not_use_because_it_will_not_log ]
 end
