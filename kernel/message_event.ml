@@ -18,10 +18,16 @@ type t =
   }
 [@@deriving fields ~getters ~iterators:create]
 
-let create ?time ?(source = "") ?(legacy_tags = []) ?level raw_message =
+let create
+  ?time
+  ?(source = Message_source.Manually_constructed "")
+  ?(legacy_tags = [])
+  ?level
+  raw_message
+  =
   let time = Option.value_or_thunk time ~default:Time_float.now in
   { raw_message
-  ; source = Manually_constructed source
+  ; source
   ; level
   ; time
   ; legacy_tags

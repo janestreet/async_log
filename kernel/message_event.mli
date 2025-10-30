@@ -14,7 +14,7 @@ type t
 
 val create
   :  ?time:Time_float.t
-  -> ?source:string
+  -> ?source:Message_source.t
   -> ?legacy_tags:(string * string) list
   -> ?level:Level.t
   -> Message_data.t
