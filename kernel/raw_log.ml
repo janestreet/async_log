@@ -25,7 +25,11 @@ let assert_open t tag =
 ;;
 
 let flushed t =
-  assert_open t "flush";
+  (* 2025-10 - We don't [assert_open] here. In a way, it's not necessary, but we also
+     found that if you have a log A with an output that writes and flushes to another log
+     B, and then stop using both, [flush_and_close] can be called on both logs, but in a
+     nondeterministic order. If B is closed before A, then A tries to flush, an
+     [assert_open] here would raise. *)
   Mutable_outputs.flushed t.output
 ;;
 
