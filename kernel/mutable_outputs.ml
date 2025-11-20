@@ -81,9 +81,9 @@ end
 
 type t =
   { mutable state : State.t
-      (* [Buffered_output] also does caching of flushes, but in case multiple logs are hooked
-     up to the same outputs, this allows further caching that's easier to test. We can
-     probably get rid of one of them at some point. *)
+      (* [Buffered_output] also does caching of flushes, but in case multiple logs are
+         hooked up to the same outputs, this allows further caching that's easier to test.
+         We can probably get rid of one of them at some point. *)
   ; mutable last_update : [ `Flush of unit Deferred.t | `Not_a_flush ]
   ; on_background_output_error : exn -> unit
   }

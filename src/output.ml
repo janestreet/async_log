@@ -36,23 +36,22 @@ let basic_write format w msg =
 ;;
 
 let open_file ?perm filename =
-  (* guard the open_file with a unit deferred to prevent any work from happening
-     before async spins up.  Without this no real work will be done, but async will be
+  (* guard the open_file with a unit deferred to prevent any work from happening before
+     async spins up. Without this no real work will be done, but async will be
      initialized, which will raise if we later call Scheduler.go_main. *)
   let%bind () = Deferred.unit in
   Writer.open_file ~append:true filename ?perm
 ;;
 
 let open_writer ~filename ~perm =
-  (* the lazy pushes evaluation to the first place we use it, which keeps writer
-     creation errors within the error handlers for the log. *)
+  (* the lazy pushes evaluation to the first place we use it, which keeps writer creation
+     errors within the error handlers for the log. *)
   lazy
     (let%map w = open_file filename ?perm in
-     (* if we are writing to a slow device, or a temporarily disconnected
-        device it's better to push back on memory in the hopes that the
-        disconnection will resolve than to blow up after a timeout.  If
-        we had a better logging error reporting mechanism we could
-        potentially deal with it that way, but we currently don't. *)
+     (* if we are writing to a slow device, or a temporarily disconnected device it's
+        better to push back on memory in the hopes that the disconnection will resolve
+        than to blow up after a timeout. If we had a better logging error reporting
+        mechanism we could potentially deal with it that way, but we currently don't. *)
      Writer.set_buffer_age_limit w `Unlimited;
      w)
 ;;
@@ -131,17 +130,17 @@ end = struct
         id, filename)
     ;;
 
-    (* errors from this function should be ignored.  If this function fails to run, the
-       disk may fill up with old logs, but external monitoring should catch that, and
-       the core function of the Log module will be unaffected. *)
+    (* errors from this function should be ignored. If this function fails to run, the
+       disk may fill up with old logs, but external monitoring should catch that, and the
+       core function of the Log module will be unaffected. *)
     let maybe_delete_old_logs ~dirname ~basename ~suffix keep =
       let%map (_ : unit Or_error.t list) =
         (match keep with
          | `All -> return []
          | `Newer_than span ->
            let%bind files = current_log_files ~dirname ~basename ~suffix in
-           (* This will be compared to the mtime of the file, so we should always use
-              now (wall-clock time) instead a different time source. *)
+           (* This will be compared to the mtime of the file, so we should always use now
+              (wall-clock time) instead a different time source. *)
            let now = Time_float.now () in
            let cutoff = Time_float.sub now span in
            Deferred.List.filter ~how:`Sequential files ~f:(fun (_, filename) ->

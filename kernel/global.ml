@@ -61,15 +61,13 @@ module Make () = struct
     ksprintf
       (fun msg ->
         let log = Lazy.force log in
-        let original_outputs = Log.get_output log in
         let outputs =
           List.filter_map
             !async_command_error_output_names
             ~f:(Log.Private.get_named_output log)
         in
-        Log.set_output log outputs;
-        Log.string log ~level:`Error ?time ?tags msg;
-        Log.set_output log original_outputs)
+        Log.Private.with_temporary_outputs log outputs ~f:(fun () ->
+          Log.string log ~level:`Error ?time ?tags msg))
       fmt
   ;;
 

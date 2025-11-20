@@ -207,8 +207,8 @@ let would_log t msg_level =
 
 let push_message_event t msg =
   (* We want to call [transform], even if we don't end up pushing the message to an
-     output.  This allows for someone to listen to all messages that would theoretically
-     be logged by this log (respecting level), and then maybe log them somewhere else. *)
+     output. This allows for someone to listen to all messages that would theoretically be
+     logged by this log (respecting level), and then maybe log them somewhere else. *)
   match transform t msg with
   | Some msg ->
     if not (Mutable_outputs.is_empty t.output)
@@ -238,6 +238,17 @@ module Private = struct
   let remove_named_output t name =
     assert_open t "remove named output";
     Mutable_outputs.remove_named_output t.output name
+  ;;
+
+  let with_temporary_outputs t outputs ~f =
+    assert_open t "with temporary outputs";
+    let original_outputs = get_output t in
+    let original_named_outputs = get_named_outputs t in
+    Mutable_outputs.update_named_outputs t.output Output_name.Map.empty;
+    set_output t outputs;
+    f ();
+    set_output t original_outputs;
+    Mutable_outputs.update_named_outputs t.output original_named_outputs
   ;;
 
   module For_testing = struct

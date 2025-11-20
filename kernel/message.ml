@@ -30,8 +30,8 @@ module Stable = struct
           let version = Versioned.Stable.Version.V2
         end)
 
-      (* this allows for automagical reading of any versioned sexp, so long as we can always
-         lift to a Message.t *)
+      (* this allows for automagical reading of any versioned sexp, so long as we can
+         always lift to a Message.t *)
       let t_of_sexp time_of_sexp (sexp : Core.Sexp.t) =
         match sexp with
         | List [ (Atom _ as version); _ ] ->

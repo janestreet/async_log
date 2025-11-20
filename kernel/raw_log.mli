@@ -56,6 +56,7 @@ module Private : sig
   val set_named_output : t -> Output_name.t -> Output.t -> unit
   val get_named_output : t -> Output_name.t -> Output.t option
   val remove_named_output : t -> Output_name.t -> unit
+  val with_temporary_outputs : t -> Output.t list -> f:(unit -> unit) -> unit
 
   module For_testing : sig
     val get_named_outputs : t -> Output.t Output_name.Map.t

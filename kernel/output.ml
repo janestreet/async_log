@@ -18,9 +18,9 @@ type t =
   ; flush : unit -> unit Deferred.t
   ; buffered_background_error : [ `Output_is_unbuffered | `Error of exn Deferred.t ]
       (* experimentation shows that this record, without this field, can sometimes raise
-     when passed to Heap_block.create_exn, which we need to do to add a finalizer.
-     This seems to occur when the functions are top-level and/or constant.  More
-     investigation is probably worthwhile. *)
+         when passed to Heap_block.create_exn, which we need to do to add a finalizer.
+         This seems to occur when the functions are top-level and/or constant. More
+         investigation is probably worthwhile. *)
   ; heap_block : Definitely_a_heap_block.t
   }
 

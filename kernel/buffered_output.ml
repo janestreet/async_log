@@ -19,7 +19,7 @@ module State = struct
     }
   [@@deriving fields ~getters]
 
-  (* Experimentally
+  (*=Experimentally
      - based on 100M log lines generated in 1k async cycles
      - long async cycles is the longest cycle >1ms and ignoring long async cycles from
        the initial log generation
@@ -66,9 +66,8 @@ module State = struct
           let%bind () = Async_kernel_scheduler.yield () in
           loop batch_size)
       else (
-        (* only decrement [yield_every] inside this branch
-           so we actually consume [batch_size] items from the pipe
-           before yielding. *)
+        (* only decrement [yield_every] inside this branch so we actually consume
+           [batch_size] items from the pipe before yielding. *)
         let yield_every = yield_every - 1 in
         match Queue.dequeue updates with
         | None -> write_msgs_to_output t ~and_then:return
@@ -95,8 +94,8 @@ end
 type t =
   { updates : Update.t Pipe.Writer.t
   ; background_error : exn Deferred.t
-      (* Some clients call [flushed] so much that merging consecutive [flush] operations makes
-     a big difference to their performance. *)
+      (* Some clients call [flushed] so much that merging consecutive [flush] operations
+         makes a big difference to their performance. *)
   ; mutable last_update : [ `Flush of unit Deferred.t | `Not_a_flush ]
   }
 [@@deriving fields ~getters]
